@@ -32,7 +32,7 @@ void cracker(File.bin){
 	if(a!=0){
 		error(err,"phtread_create");
 	}
-	void decrypteur{//threads de calculs
+	void decrypteur(buffer1){//threads de calculs
 		uint8_t mdp;
 		while(true){//tant qu'il y a a decrypter
 			sem_wait(&full);//attente d'un slot rempli de buffer1
@@ -51,5 +51,38 @@ void cracker(File.bin){
 	int b=pthread_create(pthread_t* restrict thread, NULL, decrypteur, argument);//cree le thread hasheur
 	if(b!=0){
 		error(err,"phtread_create");
+	}
+	void ecrire(){
+		int max=0;
+		char* candidat;
+		int fd2=open(fileout, O_WRONLY|O_CREAT|O_TRUNC);//peut etre troisieme parametre qui correspond aux droits du fichier mais inutile je pense
+		if(fd2==-1){
+			error(err,"open fileout");
+		}
+		while(true){//tant qu'il y a à analyser dans buffer2
+			sem_wait(&full);
+			pthread_mutex_lock(&mutex);
+			candidat=remove(mdp);
+			pthread_mutex_unlock;
+			sem_post(&empty);
+			int a=count(candidat);//count=fonction qui compte les voyelles ou consonnes, a creer ou qui existe deja
+			if(a>max){
+				pthread_mutex_lock;
+				clear(fileout);//vider le fichier
+				int b=write(fd2, ptr, sizeof(char*(1+strlen(candidat))));//ptr a verifier, je comprends bof vers quoi ca pointe
+				if(b==-1){
+					error(err, "writeerror");
+				}
+				pthread_mutex_unlock;
+			}
+			if(a==max){
+				pthread_mutex_unlock;
+				int b=write(fd2, ptr, sizeof(char*(1+strlen(candidat))));//ptr a verifier, je comprends bof vers quoi ca pointe
+				if(b==-1){
+					error(err, "writeerror");
+				}
+				pthread_mutex_unlock;
+			}
+		}
 	}
 }
