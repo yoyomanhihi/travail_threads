@@ -85,4 +85,8 @@ void cracker(File.bin){
 			}
 		}
 	}
+	int c=pthread_create(pthread_t* restrict thread, NULL, argument);
+	if(b!=0){
+		error(err,"phtread_create");
+	}
 }
