@@ -11,30 +11,34 @@ void cracker(File.bin){
 	char* buffer2[5];//taille N+2 avec N le nombre de threads		
 	void lire(){//producteur qui lit dans les fichiers
 		sem_t *sem1=(sem_t *) malloc(sizeof(sem_t));
-		int s=sem_init(sem1, 0, 3);// deuxieme parametre 0 ou 1 pas trop sur
+		int s=sem_init(&sem1, 0, 3);// deuxieme parametre 0 je pense et c est &sem1 et pas sem1 car on a besoin de l adresse pointee par sem1
 		if(s==-1){
 			perror("create semaphore");
 		}
 		pthread_mutex_t *mut1=(pthread_mutex_t *) malloc(sizeof(pthread_mutex_t));
-		pthread_mutex_init(mut1, NULL);// verifier si pas erreur ?
-		int fd1=open("test-input/01_4c_1k.bin", O_RDONLY);//ouvertue du fichier
-		if(fd1!=0){
+		if (pthread_mutex_init(mut1, NULL)!=0){//si erreur c est different de 0 
+			perror("mutex init"); 
+		}
+		
+		int fd1=open("test-input/01_4c_1k.bin", O_RDONLY);//ouverture du fichier
+		if(fd1==-1){
 			perror("open file");
 		}
 		int r=read(fd1, buffer1, sizeof(u_int8_t));//lit le fichier
-		if(r!=0){
+		if(r==-1){
+			close(fd1); //on ferme le fd qui a ete ouvert
 			perror("read file");
 		}
-		while(r!=0){//Tant qu'il y a a lire
+		while(r>=0){//Tant qu'il y a a lire
 			r=read(fd1, buffer1, sizeof(u_int8_t));//lit le fichier
-			if(r==0){
+			if(r==0){ //comprends pas bien
 				u_int8_t hash;//cree la variable hash qui stockera ce qui est lu
 				hash=fd1; //donner la valeur a la variable hash
-				sem_wait(sem1);
-				pthread_mutex_lock(mut1);
+				sem_wait(&sem1); //peut etre regarder en cas d erreur
+				pthread_mutex_lock(&mut1); // j ai mis l adresse de mut1 pas mut1
 				buffer1[0]=hash;//inserer le hash dans le buffer, je ne sais pas comment le faire entre ou il y a une place libre donc je le mets en position 0 mais a changer
 				pthread_mutex_unlock(mut1);
-				sem_post(sem1);
+				sem_post(&sem1); //meme chose en cas d erreur
 			}
 		}
 	}
