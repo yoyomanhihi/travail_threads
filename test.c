@@ -11,8 +11,15 @@
 #include "reverse.h"
 #include "reverse.c"
 	u_int8_t buffer1[3];//taille M+2 avec M qui vaut le nombre de type de fichier (1, 2 ou 3)
-	char* buffer2[5];//taille N+2 avec N le nombre de threads		
+	char* buffer2[5];//taille N+2 avec N le nombre de threads
+	int size1=3;//taille de buffer1, sert plus tard
+	int size2=5;//taille de buffer2, sert plus tard
+	int debut1=0;//debut du buffer1 a partir de quoi le buffer est vide
+	int fin1=0;//fin de la zone vide de buffer1
+	int debut2=0;//idem que debut1 mais pour buffer2
+	int fin2=0;//idem que fin1 mais pour buffer2
 	void lire(){//producteur qui lit dans les fichiers
+		int 
 		sem_t sem1;
 		int s=sem_init(&sem1, 0, 3);// deuxieme parametre 0 je pense et c est &sem1 et pas sem1 car on a besoin de l adresse pointee par sem1
 		if(s==-1){
@@ -44,7 +51,13 @@
 				hash=*rbuf1; //donner la valeur a la variable hash
 				sem_wait(&sem1); //peut etre regarder en cas d erreur
 				pthread_mutex_lock(&mut1); //adresse de mut1 pas mut1
-				buffer1[0]=hash;//inserer le hash dans le buffer, je ne sais pas comment le faire entre ou il y a une place libre donc je le mets en position 0 mais a changer
+				buffer1[debut1]=hash;//inserer le hash dans le buffer a la premiere case libre
+				if(debut1==(size1-1)){//si debut1 est a la derniere case
+					debut1=0;//revient au debut
+				}
+				else{
+					debut1++;//sinon debut1 augmente de 1;
+				}
 				pthread_mutex_unlock(&mut1);//adresse et pas mut1
 				sem_post(&sem1); //meme chose en cas d erreur
 			}
@@ -70,14 +83,25 @@
 	while(1==1){//tant qu'il y a a decrypter dans buffer1, je ne sais pas comment faire ca donc j ecris time temporairement pour compiler
 		sem_wait(&sem1);//attente d'un slot rempli de buffer1 attention inverse
 		pthread_mutex_lock(&mut1);
-		mdp=buffer1[0];//prend un hash dans buffer1 a la place x (0)
-		buffer1[0]=NULL; //vide le buffer a la place x (0)
+		mdp=buffer1[fin1];//prend la premiere valeur de buf1 apres l espace vide
+		if(fin1==(size1-1)){//si fin1 est a la derniere case
+			fin1=0;//revient au debut
+		}
+		else{
+			fin1++;//sinon fin1 augmente de 1;
+		}
 		pthread_mutex_unlock(&mut1);
 		sem_post(&sem1);//ce sera l inverse 
 		mdp=reversehash(mdp);//applique reversehash
 		sem_wait(&sem2);//attente d'un slot libre
 		pthread_mutex_lock(&mut2);
-		insert_mdp();//insere dans buffer2 pour producteur 2 mais a faire
+		buffer2[debut2]=mdp;
+		if(debut2==(size2-1)){//si debut2 est a la derniere case
+			debut2=0;//revient au debut
+		}
+		else{
+			debut2++;//sinon debut2 augmente de 1;
+		}
 		pthread_mutex_unlock(&mut2);
 		sem_post(&sem2);
 	}
