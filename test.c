@@ -21,7 +21,7 @@ int fin2=0;//idem que fin1 mais pour buffer2
 
 void lire(){//producteur qui lit dans les fichiers
 	sem_t sem1;
-	int s=sem_init(&sem1, 0, 3);// initilise la semaphore1
+	int s=sem_init(&sem1, 0, 3);// initialise le semaphore1
 	if(s==-1) //si erreur
 		perror("create semaphore");
 
@@ -61,7 +61,7 @@ void lire(){//producteur qui lit dans les fichiers
 			perror("mutex unlock read");
 		sem_post(&sem1); //meme chose en cas d erreur
 	}
-}
+}//le read est ok normalement
 
 int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regarder comment on gere ce cas
 	int len=strlen(mot); //variable qui comporte la taille du mot 
@@ -83,8 +83,8 @@ int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regard
 
 //consommateur 1 et producteur 2 
 void decrypteur(){//threads de calculs
-	char* bufferInter[1]; //buffer intermediaire utile a la fonction reversehash
-	u_int8_t *mdp; //pointeur mdp de 8 bits
+	char* bufferInter; //buffer intermediaire utile a la fonction reversehash je beug jsp comment faire pour que le mot soit dans bufferinter
+	u_int8_t *mdp=0; 
 	sem_t empty1; 
 	int e1=sem_init(&empty1, 0, 3);//cree semaphore vide qui compte 3 slots vides consommateur 1
 	if(e1==-1)//si erreur
@@ -118,7 +118,7 @@ void decrypteur(){//threads de calculs
 	while(true){//tant qu il y a a decrypter dans buffer1 je ne sais pas comment faire ca donc j ecris time temporairement pour compiler
 		sem_wait(&empty1);//attente d un slot libre (3 max)
 		pthread_mutex_lock(&mut1); //lock le mut1
-		mdp=buffer1[fin1];//prend la premiere valeur de buf1 apres l espace vide mais mdt u_int et buffer char ????
+		*mdp=buffer1[fin1];//prend la premiere valeur de buf1 apres l espace vide
 		if(fin1==(size1-1))//si fin1 est a la derniere case
 			fin1=0;//revient au debut
 		else
@@ -127,8 +127,8 @@ void decrypteur(){//threads de calculs
 		sem_post(&full1); //1 slot rempli en plus (3 max)
 		sem_wait(&empty2);//attente d'un slot libre (5 max)
 		pthread_mutex_lock(&mut2);
-		if (reversehash(mdp, bufferInter[0], 16)==true){//si reversehash a trouve un inverse il le stocke dans bufferInter mais??
-			buffer2[debut2]=bufferInter[0];
+		if (reversehash(mdp, bufferInter, 16)==true){//si reversehash a trouve un inverse il le stocke dans bufferInter mais??
+			buffer2[debut2]=*bufferInter;
 			if(debut2==(size2-1))//si debut2 est a la derniere case
 				debut2=0;//revient au debut
 			else
@@ -160,7 +160,7 @@ void ecrire(){
 		perror("init mutex3 decrypt");
 	
 	int max=0;//maximum de voyelles ou consonnes lu
-	char* candidat=malloc (sizeof(char)*(strlen(candidat)+1));//variabe servant a stocker la valeur lue dans buffer2
+	char* candidat=NULL;//variabe servant a stocker la valeur lue dans buffer2 initialisee a null au depart
 	int fd2=open("File", O_WRONLY|O_CREAT|O_TRUNC);//peut etre troisieme parametre qui correspond aux droits du fichier mais inutile je pense nom du fichier de sortie File mais jsp si nom demande
 	if(fd2==-1)
 		perror("open File write");
@@ -179,8 +179,9 @@ void ecrire(){
 		int test=count(candidat);//voir si c est mieux une fonction pour cons ET voy ou voir si plus opti de faire deux fonctions en fonction du critere
 		if(test>max){
 			pthread_mutex_lock(&mut3);
+			char* wbuff1=malloc (sizeof(char)*(strlen(candidat)+1));
 			freopen("File", "w", "File");//ferme et reouvre le fichier en le vidant w pour le mode ecriture
-			int b=write(fd2, candidat, sizeof(char)*(strlen(candidat)+1));//candidat va etre ecrit dans le fichier File
+			int b=write(fd2, wbuff1, sizeof(char)*(strlen(candidat)+1));//candidat va etre ecrit dans le fichier File
 			if(b==-1)
 				perror("write error");
 			
@@ -189,7 +190,8 @@ void ecrire(){
 		}
 		if(test==max){
 			pthread_mutex_lock(&mut3);
-			int b=write(fd2, candidat, sizeof(char)*(strlen(candidat)+1));
+			char* wbuff1=malloc (sizeof(char)*(strlen(candidat)+1));
+			int b=write(fd2, wbuff1, sizeof(char)*(strlen(candidat)+1));
 			if(b==-1)
 				perror("write error");
 			
