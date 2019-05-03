@@ -22,40 +22,12 @@ int casehash=0;//indique dans quelle case du tableau du hash placer le byte
 bool lecture=true;//indique que lire est encore en cours
 bool decryptage=true;//indique que decrypteur est encore en cours
 pthread_mutex_t mut1;
-int err=pthread_mutex_init(&mut1, NULL);
-if (err!=0){ //si erreur quand on initialise mut1 
-	perror("mutex init"); 
-}
 sem_t empty1; 
-int e1=sem_init(&empty1, 0, 3);//cree semaphore vide qui compte 3 slots vides consommateur 1
-if(e1==-1)//si erreur
-	perror("create empty1");
-
+sem_t empty2;
 sem_t full1;
-int f1=sem_init(&full1, 0, 0); //cree semaphore vide qui compte 0 slot rempli consommateur 1
-if(f1==-1)//si erreur
-	perror("create full1");
-
-sem_t empty2; 
-int e2=sem_init(&empty2, 0, 3);//cree semaphore vide qui compte 5 slots vides producteur 2
-if(e2==-1)//si erreur
-	perror("create empty2");
-	
 sem_t full2;
-int f2=sem_init(&full2, 0, 0); //cree semaphore vide qui compte 0 slot rempli producteur 2
-if(f2==-1)//si erreur
-	perror("create full2");
-
 pthread_mutex_t mut2;//Pour le test je recree un mutex mais toujours le meme dans cracker je pense
-int err2 = pthread_mutex_init(&mut2, NULL);
-if(err2!=0)//si erreur
-	perror("init mutex2 decrypt");
-
 pthread_mutex_t mut3;//mutex servant a ecrire dans fichier de sortie
-int err3 = pthread_mutex_init(&mut3, NULL);
-if(err3!=0)//si erreur
-	perror("init mutex3 decrypt");
-
 
 void *lire(){//producteur qui lit dans les fichiers
 	int fd1=open("test-input/01_4c_1k.bin", O_RDONLY);//ouverture du fichier
@@ -63,10 +35,6 @@ void *lire(){//producteur qui lit dans les fichiers
 		perror("open file");
 	}
 	u_int8_t *rbuf1 = (u_int8_t *)malloc(sizeof(u_int8_t)); // cree le buffer pour read
-	if(read(fd1, rbuf1, sizeof(u_int8_t))==-1){ //si erreur
-		close(fd1); //on ferme le fd qui a ete ouvert en cas d erreur de read
-		perror("read file");
-	}
 	u_int8_t hash[32];//cree la variable hash qui stockera ce qui est lu
 	while(read(fd1, rbuf1, sizeof(u_int8_t))>0){//Tant qu'il y a a lire
 		hash [casehash]=*rbuf1; //donner la valeur a la variable hash
@@ -193,6 +161,35 @@ void *ecrire(){
 }
 
 int main(int argc, char *argv[]){
+	int err=pthread_mutex_init(&mut1, NULL);
+	if (err!=0){ //si erreur quand on initialise mut1 
+	perror("mutex init"); 
+	}
+	int e1=sem_init(&empty1, 0, 3);//cree semaphore vide qui compte 3 slots vides consommateur 1
+	if(e1==-1){//si erreur
+		perror("create empty1");
+	}
+	int f1=sem_init(&full1, 0, 0); //cree semaphore vide qui compte 0 slot rempli consommateur 1
+	if(f1==-1){//si erreur
+		perror("create full1");
+	}
+	int e2=sem_init(&empty2, 0, 3);//cree semaphore vide qui compte 5 slots vides producteur 2
+	if(e2==-1){//si erreur
+		perror("create empty2");
+	}
+	int f2=sem_init(&full2, 0, 0); //cree semaphore vide qui compte 0 slot rempli producteur 2
+	if(f2==-1){//si erreur
+		perror("create full2");
+	}
+	int err2 = pthread_mutex_init(&mut2, NULL);
+	if(err2!=0){//si erreur
+		perror("init mutex2 decrypt");
+	}
+	int err3 = pthread_mutex_init(&mut3, NULL);
+	if(err3!=0){//si erreur
+		perror("init mutex3 decrypt");
+	}
+
 	int err_threads;
 	pthread_t lire_t;
 	pthread_t ecrire_t;

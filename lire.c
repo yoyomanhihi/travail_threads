@@ -47,7 +47,7 @@ void lire(){//producteur qui lit dans les fichiers
 void decrypteur(){//threads de calculs
 	char *bufferInter=(char *) malloc(sizeof(char)*17); //buffer intermediaire utile a la fonction reversehash je beug jsp comment faire pour que le mot soit dans bufferinter
 	u_int8_t *mdp=(u_int8_t *) malloc(sizeof(u_int8_t)*32);
-	while(){//tant que le thread a encore a lire et que le buffer n est pas vide, juste a verifier que la condition debut1!=fin1 n accepte pas un buffer totalement rempli
+	while(1==1){//tant que le thread a encore a lire et que le buffer n est pas vide, juste a verifier que la condition debut1!=fin1 n accepte pas un buffer totalement rempli
 		mdp=buffer1[fin1];//prend la premiere valeur de buf1 apres l espace vide
 		if(fin1==(size1-1)){//si fin1 est a la derniere case
 			fin1=0;//revient au debut
