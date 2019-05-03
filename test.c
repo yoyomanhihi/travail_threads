@@ -26,7 +26,7 @@ sem_t empty1;
 sem_t empty2;
 sem_t full1;
 sem_t full2;
-pthread_mutex_t mut2;//Pour le test je recree un mutex mais toujours le meme dans cracker je pense
+pthread_mutex_t mut2;
 pthread_mutex_t mut3;//mutex servant a ecrire dans fichier de sortie
 
 void *lire(){//producteur qui lit dans les fichiers
@@ -36,7 +36,7 @@ void *lire(){//producteur qui lit dans les fichiers
 	}
 	u_int8_t *rbuf1 = (u_int8_t *)malloc(sizeof(u_int8_t)); // cree le buffer pour read
 	u_int8_t hash[32];//cree la variable hash qui stockera ce qui est lu
-	while(read(fd1, rbuf1, sizeof(u_int8_t))>0){//Tant qu'il y a a lire
+	while(read(fd1, rbuf1, sizeof(u_int8_t)>0)){//Tant qu'il y a a lire
 		hash [casehash]=*rbuf1; //donner la valeur a la variable hash
 		if(casehash==31){
 			sem_wait(&empty1); //peut etre regarder en cas d erreur
@@ -61,7 +61,7 @@ void *lire(){//producteur qui lit dans les fichiers
 		casehash++;
 	}
 	lecture=false;
-	return (EXIT_SUCCESS);	
+	pthread_exit(NULL);	
 }
 int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regarder comment on gere ce cas
 	int len=strlen(mot); //variable qui comporte la taille du mot 
@@ -99,9 +99,9 @@ void *decrypteur(){//threads de calculs
 		sem_post(&empty1); //1 slot vide en plus 
 		bool trouve=reversehash(mdp, bufferInter, 17);//si reversehash a trouve un inverse il le stocke dans bufferInter 
 		if(trouve==true){
-			printf("%s \n", bufferInter);
 			sem_wait(&empty2);//attente d'un slot libre (5 max)
 			pthread_mutex_lock(&mut2);
+			buffer2[debut2]=bufferInter;//on remet dans le deuxieme buffer le mdp passe dans reversehash qui se trouve dans bufferinter
 			if(debut2==(size2-1)){//si debut2 est a la derniere case
 				debut2=0;//revient au debut
 			}
@@ -113,7 +113,7 @@ void *decrypteur(){//threads de calculs
 		sem_post(&full2); //1 slot rempli en plus (5 max)
 	}
 	decryptage=false;
-	return (EXIT_SUCCESS);		
+	pthread_exit(NULL);		
 }
 
 void *ecrire(){
@@ -127,6 +127,7 @@ void *ecrire(){
 		sem_wait(&full2);
 		pthread_mutex_lock(&mut2);
 		candidat=buffer2[fin2];// verifier que pas de probleme
+		printf("%s\n", candidat);// a partir de la cv plus
 		if(fin2==(size2-1)){//si fin2 est a la derniere case
 			fin2=0;//revient au debut
 		}
@@ -135,7 +136,7 @@ void *ecrire(){
 		}
 		pthread_mutex_unlock(&mut2);
 		sem_post(&empty2);//pour moi le sem_post doit pas etre la truc bizarre avec le candidat
-		int test=count(candidat);//voir si c est mieux une fonction pour cons ET voy ou voir si plus opti de faire deux fonctions en fonction du critere
+		int test=count(candidat);
 		if(test>max){
 			pthread_mutex_lock(&mut3);
 			char* wbuff1=malloc (sizeof(char)*(strlen(candidat)+1));
@@ -157,14 +158,11 @@ void *ecrire(){
 			pthread_mutex_unlock(&mut3);
 		}
 	}
-	return (EXIT_SUCCESS);	
+	pthread_exit(NULL);	
 }
 
 int main(int argc, char *argv[]){
-	int err=pthread_mutex_init(&mut1, NULL);
-	if (err!=0){ //si erreur quand on initialise mut1 
-	perror("mutex init"); 
-	}
+//creation des sem
 	int e1=sem_init(&empty1, 0, 3);//cree semaphore vide qui compte 3 slots vides consommateur 1
 	if(e1==-1){//si erreur
 		perror("create empty1");
@@ -173,7 +171,7 @@ int main(int argc, char *argv[]){
 	if(f1==-1){//si erreur
 		perror("create full1");
 	}
-	int e2=sem_init(&empty2, 0, 3);//cree semaphore vide qui compte 5 slots vides producteur 2
+	int e2=sem_init(&empty2, 0, 5);//cree semaphore vide qui compte 5 slots vides producteur 2
 	if(e2==-1){//si erreur
 		perror("create empty2");
 	}
@@ -181,33 +179,43 @@ int main(int argc, char *argv[]){
 	if(f2==-1){//si erreur
 		perror("create full2");
 	}
+//creation des mutex
+	int err=pthread_mutex_init(&mut1, NULL);
+	if (err!=0){ //si erreur quand on initialise mut1 
+	perror("mutex init"); 
+	}
 	int err2 = pthread_mutex_init(&mut2, NULL);
 	if(err2!=0){//si erreur
 		perror("init mutex2 decrypt");
 	}
 	int err3 = pthread_mutex_init(&mut3, NULL);
 	if(err3!=0){//si erreur
-		perror("init mutex	3 decrypt");
+		perror("init mutex3 decrypt");
 	}
 
+//creation des threads
 	int err_threads;
 	pthread_t lire_t;
-	pthread_t ecrire_t;
 	pthread_t decrypter_t;
+	pthread_t ecrire_t;
 
-	err_threads=pthread_create(&lire_t, NULL, &lire, NULL);
+
+	err_threads=pthread_create(&lire_t, NULL, lire, NULL);//cree le premier thread lire
 	if(err_threads!=0){
 		perror("thread lire");
 	}
 
-	pthread_join(lire_t, NULL);
-	err_threads=pthread_create(&decrypter_t, NULL, &decrypteur, NULL);
+	err_threads=pthread_create(&decrypter_t, NULL, decrypteur, NULL);//cree le second thread decrypteur
 	if(err_threads!=0){
 		perror("thread decrypteur");
 	}
-	pthread_join(decrypter_t, NULL);
-	err_threads=pthread_create(&ecrire_t, NULL, &ecrire, NULL);
+	err_threads=pthread_create(&ecrire_t, NULL, ecrire, NULL);//cree le dernier thread ecrire
 	if(err_threads!=0){
 		perror("thread ecrire");
 	}
+	pthread_join(lire_t, NULL);
+	pthread_join(decrypter_t, NULL);
+	pthread_join(ecrire_t, NULL);
+
+	return 0;
 }
