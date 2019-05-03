@@ -22,8 +22,8 @@ int casehash=0;//indique dans quelle case du tableau du hash placer le byte
 bool lecture=true;//indique que lire est encore en cours
 bool decryptage=true;//indique que decrypteur est encore en cours
 pthread_mutex_t mut1;
-int err=pthread_mutex_init(&mut1, NULL);//initialise le mutex1
-if (err!=0){ //si erreur
+int err=pthread_mutex_init(&mut1, NULL);
+if (err!=0){ //si erreur quand on initialise mut1 
 	perror("mutex init"); 
 }
 sem_t empty1; 
@@ -57,7 +57,7 @@ if(err3!=0)//si erreur
 	perror("init mutex3 decrypt");
 
 
-void lire(){//producteur qui lit dans les fichiers
+void *lire(){//producteur qui lit dans les fichiers
 	int fd1=open("test-input/01_4c_1k.bin", O_RDONLY);//ouverture du fichier
 	if(fd1==-1){ //si erreur
 		perror("open file");
@@ -93,6 +93,7 @@ void lire(){//producteur qui lit dans les fichiers
 		casehash++;
 	}
 	lecture=false;
+	return (EXIT_SUCCESS);	
 }
 int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regarder comment on gere ce cas
 	int len=strlen(mot); //variable qui comporte la taille du mot 
@@ -113,7 +114,7 @@ int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regard
 }
 
 //consommateur 1 et producteur 2 
-void decrypteur(){//threads de calculs
+void *decrypteur(){//threads de calculs
 	char *bufferInter=(char *) malloc(sizeof(char)*17); //buffer intermediaire utile a la fonction reversehash je beug jsp comment faire pour que le mot soit dans bufferinter
 	u_int8_t *mdp=(u_int8_t *) malloc(sizeof(u_int8_t)*32);
 	while((lecture==true)||(debut1!=fin1)){//tant que le thread a encore a lire et que le buffer n est pas vide, juste a verifier que la condition debut1!=fin1 n accepte pas un buffer totalement rempli
@@ -128,7 +129,7 @@ void decrypteur(){//threads de calculs
 		}
 		sem_post(&empty1); //1 slot vide en plus 
 		pthread_mutex_unlock(&mut1); //unlock mut1
-		bool trouve=reversehash(mdp, bufferInter, 17){//si reversehash a trouve un inverse il le stocke dans bufferInter 
+		bool trouve=reversehash(mdp, bufferInter, 17);//si reversehash a trouve un inverse il le stocke dans bufferInter 
 		if(trouve==true){
 			printf("%s \n", bufferInter);
 			sem_wait(&empty2);//attente d'un slot libre (5 max)
@@ -143,10 +144,11 @@ void decrypteur(){//threads de calculs
 		sem_post(&full2); //1 slot rempli en plus (5 max)
 		pthread_mutex_unlock(&mut2);
 	}
-	decryptage=false;	
+	decryptage=false;
+	return (EXIT_SUCCESS);		
 }
 
-void ecrire(){
+void *ecrire(){
 	int max=0;//maximum de voyelles ou consonnes lu
 	char* candidat=NULL;//variabe servant a stocker la valeur lue dans buffer2 initialisee a null au depart
 	int fd2=open("File", O_WRONLY|O_CREAT|O_TRUNC);//peut etre troisieme parametre qui correspond aux droits du fichier mais inutile je pense nom du fichier de sortie File mais jsp si nom demande
@@ -186,5 +188,27 @@ void ecrire(){
 			}
 			pthread_mutex_unlock(&mut3);
 		}
-	}	
+	}
+	return (EXIT_SUCCESS);	
+}
+
+int main(int argc, char *argv[]){
+	int err_threads;
+	pthread_t lire_t;
+	pthread_t ecrire_t;
+	pthread_t decrypter_t;
+
+	err_threads=pthread_create(&lire_t, NULL, &lire, NULL);
+	if(err_threads!=0)
+		perror("thread lire");
+
+	err_threads=pthread_create(&decrypter_t, NULL, &decrypteur, NULL);
+	if(err_threads!=0)
+		perror("thread decrypteur");
+
+	err_threads=pthread_create(&ecrire_t, NULL, &ecrire, NULL);
+	if(err_threads!=0)
+		perror("thread ecrire");
+
+	return(EXIT_SUCCESS);
 }
