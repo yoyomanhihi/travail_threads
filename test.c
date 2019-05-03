@@ -83,7 +83,7 @@ int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regard
 
 //consommateur 1 et producteur 2 
 void *decrypteur(){//threads de calculs
-	char *bufferInter=(char *) malloc(sizeof(char)*17); //buffer intermediaire utile a la fonction reversehash je beug jsp comment faire pour que le mot soit dans bufferinter
+	char *bufferInter=(char *) malloc(sizeof(char)*17); //buffer intermediaire utile a la fonction reversehash
 	u_int8_t *mdp=(u_int8_t *) malloc(sizeof(u_int8_t)*32);
 	while((lecture==true)||(debut1!=fin1)){//tant que le thread a encore a lire et que le buffer n est pas vide, juste a verifier que la condition debut1!=fin1 n accepte pas un buffer totalement rempli
 		sem_wait(&full1);//attente d un slot rempli
@@ -95,8 +95,8 @@ void *decrypteur(){//threads de calculs
 		else{
 			fin1++;//sinon fin1 augmente de 1;
 		}
-		sem_post(&empty1); //1 slot vide en plus 
 		pthread_mutex_unlock(&mut1); //unlock mut1
+		sem_post(&empty1); //1 slot vide en plus 
 		bool trouve=reversehash(mdp, bufferInter, 17);//si reversehash a trouve un inverse il le stocke dans bufferInter 
 		if(trouve==true){
 			printf("%s \n", bufferInter);
@@ -109,8 +109,8 @@ void *decrypteur(){//threads de calculs
 				debut2++;//sinon debut2 augmente de 1;
 			}
 		}
-		sem_post(&full2); //1 slot rempli en plus (5 max)
 		pthread_mutex_unlock(&mut2);
+		sem_post(&full2); //1 slot rempli en plus (5 max)
 	}
 	decryptage=false;
 	return (EXIT_SUCCESS);		
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]){
 	}
 	int err3 = pthread_mutex_init(&mut3, NULL);
 	if(err3!=0){//si erreur
-		perror("init mutex3 decrypt");
+		perror("init mutex	3 decrypt");
 	}
 
 	int err_threads;
@@ -196,16 +196,18 @@ int main(int argc, char *argv[]){
 	pthread_t decrypter_t;
 
 	err_threads=pthread_create(&lire_t, NULL, &lire, NULL);
-	if(err_threads!=0)
+	if(err_threads!=0){
 		perror("thread lire");
+	}
 
+	pthread_join(lire_t, NULL);
 	err_threads=pthread_create(&decrypter_t, NULL, &decrypteur, NULL);
-	if(err_threads!=0)
+	if(err_threads!=0){
 		perror("thread decrypteur");
-
+	}
+	pthread_join(decrypter_t, NULL);
 	err_threads=pthread_create(&ecrire_t, NULL, &ecrire, NULL);
-	if(err_threads!=0)
+	if(err_threads!=0){
 		perror("thread ecrire");
-
-	return(EXIT_SUCCESS);
+	}
 }
