@@ -18,7 +18,7 @@ int debut1=0;//debut du buffer1 a partir de quoi le buffer est vide
 int fin1=0;//fin de la zone vide de buffer1
 int debut2=0;//idem que debut1 mais pour buffer2
 int fin2=0;//idem que fin1 mais pour buffer2
-int casehash=0;//indique dans quelle case du tableau du hash placer le byte
+//int casehash=0;//indique dans quelle case du tableau du hash placer le byte
 bool lecture=true;//indique que lire est encore en cours
 bool decryptage=true;//indique que decrypteur est encore en cours
 pthread_mutex_t mut1;
@@ -34,17 +34,19 @@ void *lire(){//producteur qui lit dans les fichiers
 	if(fd1==-1){ //si erreur
 		perror("open file");
 	}
-	u_int8_t *rbuf1 = (u_int8_t *)malloc(sizeof(u_int8_t)); // cree le buffer pour read
-	u_int8_t hash[32];//cree la variable hash qui stockera ce qui est lu
-	while(read(fd1, rbuf1, sizeof(u_int8_t)>0)){//Tant qu'il y a a lire
-		hash [casehash]=*rbuf1; //donner la valeur a la variable hash
-		if(casehash==31){
+	u_int8_t *rbuf1 = (u_int8_t *)malloc(sizeof(u_int8_t)*32); // cree le buffer pour read
+	//u_int8_t hash[32];//cree la variable hash qui stockera ce qui est lu
+	while(read(fd1, rbuf1, sizeof(u_int8_t)*32)>0){//Tant qu'il y a a lire
+		//printf("%d\n", *rbuf1);// a partir de la cv plus
+		//hash[casehash]=*rbuf1; //donner la valeur a la variable hash
+		//if(casehash==31){
 			sem_wait(&empty1); //peut etre regarder en cas d erreur
 			int err1 = pthread_mutex_lock(&mut1); //lock le mut1
 			if(err1!=0){//si erreur
 				perror("mutex lock read"); 
 			}
-			buffer1[debut1]=hash;//inserer le hash dans le buffer a la premiere case libre
+			buffer1[debut1]=rbuf1;//inserer le hash dans le buffer a la premiere case libre
+			printf("%d\n", *buffer1[debut1]);// a partir de la cv plus
 			if(debut1==(size1-1)){//si debut1 est a la derniere case
 					debut1=0;//revient au debut
 			}
@@ -56,9 +58,9 @@ void *lire(){//producteur qui lit dans les fichiers
 				perror("mutex unlock read");
 			}
 			sem_post(&full1); //meme chose en cas d erreur
-			casehash=-1;
-		}
-		casehash++;
+			//casehash=-1;
+		//}
+		//casehash++;
 	}
 	lecture=false;
 	pthread_exit(NULL);	
@@ -89,6 +91,7 @@ void *decrypteur(){//threads de calculs
 		sem_wait(&full1);//attente d un slot rempli
 		pthread_mutex_lock(&mut1); //lock le mut1
 		mdp=buffer1[fin1];//prend la premiere valeur de buf1 apres l espace vide
+		printf("%d\n", *mdp);
 		if(fin1==(size1-1)){//si fin1 est a la derniere case
 			fin1=0;//revient au debut
 		}
@@ -98,10 +101,12 @@ void *decrypteur(){//threads de calculs
 		pthread_mutex_unlock(&mut1); //unlock mut1
 		sem_post(&empty1); //1 slot vide en plus 
 		bool trouve=reversehash(mdp, bufferInter, 17);//si reversehash a trouve un inverse il le stocke dans bufferInter 
+		//printf("%s\n", bufferInter);
 		if(trouve==true){
 			sem_wait(&empty2);//attente d'un slot libre (5 max)
 			pthread_mutex_lock(&mut2);
 			buffer2[debut2]=bufferInter;//on remet dans le deuxieme buffer le mdp passe dans reversehash qui se trouve dans bufferinter
+			//printf("%s\n", buffer2[debut2]);
 			if(debut2==(size2-1)){//si debut2 est a la derniere case
 				debut2=0;//revient au debut
 			}
@@ -116,7 +121,7 @@ void *decrypteur(){//threads de calculs
 	pthread_exit(NULL);		
 }
 
-void *ecrire(){
+/*void *ecrire(){
 	int max=0;//maximum de voyelles ou consonnes lu
 	char* candidat=NULL;//variabe servant a stocker la valeur lue dans buffer2 initialisee a null au depart
 	int fd2=open("File", O_WRONLY|O_CREAT|O_TRUNC);//peut etre troisieme parametre qui correspond aux droits du fichier mais inutile je pense nom du fichier de sortie File mais jsp si nom demande
@@ -127,7 +132,6 @@ void *ecrire(){
 		sem_wait(&full2);
 		pthread_mutex_lock(&mut2);
 		candidat=buffer2[fin2];// verifier que pas de probleme
-		printf("%s\n", candidat);// a partir de la cv plus
 		if(fin2==(size2-1)){//si fin2 est a la derniere case
 			fin2=0;//revient au debut
 		}
@@ -160,7 +164,7 @@ void *ecrire(){
 	}
 	pthread_exit(NULL);	
 }
-
+*/
 int main(int argc, char *argv[]){
 //creation des sem
 	int e1=sem_init(&empty1, 0, 3);//cree semaphore vide qui compte 3 slots vides consommateur 1
@@ -197,7 +201,7 @@ int main(int argc, char *argv[]){
 	int err_threads;
 	pthread_t lire_t;
 	pthread_t decrypter_t;
-	pthread_t ecrire_t;
+	//pthread_t ecrire_t;
 
 
 	err_threads=pthread_create(&lire_t, NULL, lire, NULL);//cree le premier thread lire
@@ -209,13 +213,13 @@ int main(int argc, char *argv[]){
 	if(err_threads!=0){
 		perror("thread decrypteur");
 	}
-	err_threads=pthread_create(&ecrire_t, NULL, ecrire, NULL);//cree le dernier thread ecrire
+	/*err_threads=pthread_create(&ecrire_t, NULL, ecrire, NULL);//cree le dernier thread ecrire
 	if(err_threads!=0){
 		perror("thread ecrire");
-	}
+	}*/
 	pthread_join(lire_t, NULL);
 	pthread_join(decrypter_t, NULL);
-	pthread_join(ecrire_t, NULL);
+	//pthread_join(ecrire_t, NULL);
 
 	return 0;
 }
