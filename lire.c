@@ -70,10 +70,6 @@ void test(){
 	u_int8_t *rbuf1 = (u_int8_t *)malloc(sizeof(u_int8_t)); // cree le buffer pour read
 	u_int8_t hash[32];
 	int casehash=0;
-	if(read(fd1, rbuf1, sizeof(u_int8_t)==-1)){ //si erreur
-		close(fd1); //on ferme le fd qui a ete ouvert en cas d erreur de read
-		perror("read file");
-	}
 	while(read(fd1, rbuf1, sizeof(u_int8_t)>0)){//Tant qu'il y a a lire
 		hash[casehash]=*rbuf1;
 		if(casehash==31){

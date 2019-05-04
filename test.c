@@ -52,10 +52,6 @@ void *lire(){//producteur qui lit dans les fichiers
 		perror("open file");
 	}
 	u_int8_t *rbuf1 = (u_int8_t *)malloc(sizeof(u_int8_t)*32); // cree le buffer pour read
-	if(read(fd1, rbuf1, sizeof(u_int8_t)*32)==-1){ //si erreur
-		close(fd1); //on ferme le fd qui a ete ouvert en cas d erreur de read
-		perror("read file");
-	}
 	while(read(fd1, rbuf1, sizeof(u_int8_t)*32)>0){//Tant qu'il y a a lire
 		sem_wait(&empty1); //peut etre regarder en cas d erreur
 		int err1 = pthread_mutex_lock(&mut1); //lock le mut1
@@ -83,7 +79,7 @@ void *lire(){//producteur qui lit dans les fichiers
 //consommateur 1 et producteur 2 
 void *decrypteur(){//threads de calculs
 	char *bufferInter=(char *) malloc(sizeof(char)*17); //buffer intermediaire utile a la fonction reversehash
-	u_int8_t *mdp=(u_int8_t *) malloc(sizeof(u_int8_t)*32);
+	u_int8_t *mdp;
 	while((lecture==true)||(debut1!=fin1)){//tant que le thread a encore a lire et que le buffer n est pas vide, juste a verifier que la condition debut1!=fin1 n accepte pas un buffer totalement rempli
 		sem_wait(&full1);//attente d un slot rempli
 		pthread_mutex_lock(&mut1); //lock le mut1
@@ -119,11 +115,11 @@ void *decrypteur(){//threads de calculs
 void *ecrire(){
 	int max=0;//maximum de voyelles ou consonnes lu
 	char* candidat=NULL;//variabe servant a stocker la valeur lue dans buffer2 initialisee a null au depart
-	int fd2=open("File", O_WRONLY|O_CREAT|O_TRUNC);//peut etre troisieme parametre qui correspond aux droits du fichier mais inutile je pense nom du fichier de sortie File mais jsp si nom demande
+	int fd2=open("File.txt", O_WRONLY|O_CREAT|O_TRUNC);//peut etre troisieme parametre qui correspond aux droits du fichier mais inutile je pense nom du fichier de sortie File mais jsp si nom demande
 	if(fd2==-1)
 		perror("open File write");
 	
-	while((decryptage==true)&&(debut2!=fin2)){//tant que la fonction decrypteur n a pas tremine et que le buffer2 n est pas vide, verifier condition 2 que pas de faille
+	while(decryptage==true||debut2!=fin2){//tant que la fonction decrypteur n a pas tremine et que le buffer2 n est pas vide, verifier condition 2 que pas de faille
 		sem_wait(&full2);
 		pthread_mutex_lock(&mut2);
 		candidat=buffer2[fin2];// verifier que pas de probleme
@@ -138,12 +134,12 @@ void *ecrire(){
 		sem_post(&empty2);
 		if(test>max){
 			pthread_mutex_lock(&mut3);
-			char* wbuff1=malloc (sizeof(char)*(strlen(candidat)+1));
-			freopen("File", "w", stdout);//ferme et reouvre le fichier en le vidant w pour le mode ecriture, pas sur stdout
-			int b=write(fd2, wbuff1, sizeof(char)*(strlen(candidat)+1));//candidat va etre ecrit dans le fichier File
-			if(b==-1){
-				perror("write error");
-			}
+			//char* wbuff1=malloc (sizeof(char)*(strlen(candidat)+1));
+			//freopen("File.txt", "w", stdout);//ferme et reouvre le fichier en le vidant w pour le mode ecriture, pas sur stdout
+			//int b=write(fd2, wbuff1, sizeof(char)*(strlen(candidat)+1));//candidat va etre ecrit dans le fichier File
+			//if(b==-1){
+			//	perror("write error");
+			//}
 			max=test; //max prend donc la valeur de test
 			pthread_mutex_unlock(&mut3);
 		}
@@ -212,7 +208,6 @@ int main(int argc, char *argv[]){
 	if(err_threads!=0){
 		perror("thread ecrire");
 	}
-
 	pthread_join(lire_t, NULL);
 	pthread_join(decrypter_t, NULL);
 	pthread_join(ecrire_t, NULL);
