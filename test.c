@@ -14,8 +14,8 @@ uint8_t *buffer1[3];//taille M+2 avec M qui vaut le nombre de type de fichier (1
 char* buffer2[5];//taille N+2 avec N le nombre de threads
 int size1=3;//taille de buffer1, sert plus tard
 int size2=5;//taille de buffer2, sert plus tard
-int debut1=0;//debut du buffer1 a partir de quoi le buffer est vide
-int fin1=0;//fin de la zone vide de buffer1
+int debut1;//debut du buffer1 a partir de quoi le buffer est vide
+int fin1;//fin de la zone vide de buffer1
 int debut2=0;//idem que debut1 mais pour buffer2
 int fin2=0;//idem que fin1 mais pour buffer2
 bool lecture=true;//indique que lire est encore en cours
@@ -27,6 +27,14 @@ sem_t full1;
 sem_t full2;
 pthread_mutex_t mut2;
 pthread_mutex_t mut3;//mutex servant a ecrire dans fichier de sortie
+typedef struct node{
+	struct node *next;
+	char* candid;
+} node_t;
+typedef struct list{
+	struct node *first;
+	int sizelist;
+} list_t;
 
 int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regarder comment on gere ce cas
 	int len=strlen(mot); //variable qui comporte la taille du mot 
@@ -48,6 +56,7 @@ int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regard
 
 void *lire(){//producteur qui lit dans les fichiers
 	int fd1=open("test-input/01_4c_1k.bin", O_RDONLY);//ouverture du fichier
+	debut1=0;
 	if(fd1==-1){ //si erreur
 		perror("open file");
 	}
@@ -71,7 +80,7 @@ void *lire(){//producteur qui lit dans les fichiers
 		}
 		sem_post(&full1); //meme chose en cas d erreur
 	}
-	lecture=false;
+	lecture=false;//peut etre lock pour eviter probleme a la fin
 	pthread_exit(NULL);	
 }
 
@@ -79,6 +88,7 @@ void *lire(){//producteur qui lit dans les fichiers
 //consommateur 1 et producteur 2 
 void *decrypteur(){//threads de calculs
 	char *bufferInter=(char *) malloc(sizeof(char)*17); //buffer intermediaire utile a la fonction reversehash
+	fin1=0;
 	u_int8_t *mdp;
 	while((lecture==true)||(debut1!=fin1)){//tant que le thread a encore a lire et que le buffer n est pas vide, juste a verifier que la condition debut1!=fin1 n accepte pas un buffer totalement rempli
 		sem_wait(&full1);//attente d un slot rempli
@@ -113,12 +123,9 @@ void *decrypteur(){//threads de calculs
 }
 
 void *ecrire(){
-	int max=0;//maximum de voyelles ou consonnes lu
+	list_t *list=(list_t *) malloc(sizeof(list_t));
+	int max=-1;//maximum de voyelles ou consonnes lu
 	char* candidat=NULL;//variabe servant a stocker la valeur lue dans buffer2 initialisee a null au depart
-	int fd2=open("File.txt", O_WRONLY|O_CREAT|O_TRUNC);//peut etre troisieme parametre qui correspond aux droits du fichier mais inutile je pense nom du fichier de sortie File mais jsp si nom demande
-	if(fd2==-1)
-		perror("open File write");
-	
 	while(decryptage==true||debut2!=fin2){//tant que la fonction decrypteur n a pas tremine et que le buffer2 n est pas vide, verifier condition 2 que pas de faille
 		sem_wait(&full2);
 		pthread_mutex_lock(&mut2);
@@ -134,23 +141,35 @@ void *ecrire(){
 		sem_post(&empty2);
 		if(test>max){
 			pthread_mutex_lock(&mut3);
-			//char* wbuff1=malloc (sizeof(char)*(strlen(candidat)+1));
-			//freopen("File.txt", "w", stdout);//ferme et reouvre le fichier en le vidant w pour le mode ecriture, pas sur stdout
-			//int b=write(fd2, wbuff1, sizeof(char)*(strlen(candidat)+1));//candidat va etre ecrit dans le fichier File
-			//if(b==-1){
-			//	perror("write error");
-			//}
-			max=test; //max prend donc la valeur de test
+			node_t *n=(node_t *) malloc(sizeof(node_t));
+			if(n==NULL){
+				perror("node creation");
+			}
+			n->candid=candidat;
+			list->first=n;
+			list->sizelist=1;
 			pthread_mutex_unlock(&mut3);
 		}
 		if(test==max){
 			pthread_mutex_lock(&mut3);
-			char* wbuff1=malloc (sizeof(char)*(strlen(candidat)+1));
-			int b=write(fd2, wbuff1, sizeof(char)*(strlen(candidat)+1));
-			if(b==-1){
-				perror("write error");
+			node_t *n=(node_t *) malloc(sizeof(node_t));
+			if(n==NULL){
+				perror("node creation");
 			}
+			n->candid=candidat;
+			list->sizelist++;
 			pthread_mutex_unlock(&mut3);
+		}
+	}
+	int fd2=open("test-input/01_4c_1k.txt", O_WRONLY|O_CREAT|O_TRUNC);//peut etre troisieme parametre qui correspond aux droits du fichier mais inutile je pense nom du fichier de sortie File mais jsp si nom demande
+	if(fd2==-1){
+		perror("open File write");
+	}
+	for(int i=1;i<=list->sizelist;i++){
+		char *wbuff1=malloc(sizeof(char)*strlen(candidat)+1);
+		int b=write(fd2, wbuff1, sizeof(char)*(strlen(candidat)+1));
+		if(b==-1){
+			perror("write error");
 		}
 	}
 	pthread_exit(NULL);	
