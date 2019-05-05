@@ -10,7 +10,7 @@
 #include "sha256.c"
 #include "reverse.h"
 #include "reverse.c"
-uint8_t *buffer1[3];//taille M+2 avec M qui vaut le nombre de type de fichier (1, 2 ou 3)
+uint8_t **buffer1;//taille M+2 avec M qui vaut le nombre de type de fichier (1, 2 ou 3)
 char* buffer2[5];//taille N+2 avec N le nombre de threads
 int size1=3;//taille de buffer1, sert plus tard
 int size2=5;//taille de buffer2, sert plus tard
@@ -55,6 +55,7 @@ int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regard
 }
 
 void *lire(){//producteur qui lit dans les fichiers
+	buffer1=(uint8_t **) malloc(3*sizeof(uint8_t *));
 	int fd1=open("test-input/01_4c_1k.bin", O_RDONLY);//ouverture du fichier
 	debut1=0;
 	if(fd1==-1){ //si erreur
@@ -62,18 +63,20 @@ void *lire(){//producteur qui lit dans les fichiers
 	}
 	u_int8_t *rbuf1 = (u_int8_t *)malloc(sizeof(u_int8_t)*32); // cree le buffer pour read
 	while(read(fd1, rbuf1, sizeof(u_int8_t)*32)>0){//Tant qu'il y a a lire
+		u_int8_t *rbuf = (u_int8_t *)malloc(sizeof(u_int8_t)*32); // cree le buffer pour read7
+		for(int i=0; i<32; i++){//copie de rbuf1 dans rbuf ! 
+			rbuf[i]=rbuf1[i];
+		}
 		sem_wait(&empty1); //peut etre regarder en cas d erreur
 		int err1 = pthread_mutex_lock(&mut1); //lock le mut1
 		if(err1!=0){//si erreur
 			perror("mutex lock read"); 
 		}
-		buffer1[debut1]=rbuf1;//inserer le hash dans le buffer a la premiere case libre
+		buffer1[debut1]=rbuf;//inserer le hash dans le buffer a la premiere case libre
 		if(debut1==(size1-1)){//si debut1 est a la derniere case
-			debut1=0;//revient au debut
+			debut1=-1;//revient au debut
 		}
-		else{
-			debut1++;//sinon debut1 augmente de 1;
-		}
+		debut1++;//sinon debut1 augmente de 1;
 		err1 = pthread_mutex_unlock(&mut1);//unlock le mut1
 		if(err1!=0){//si erreur
 			perror("mutex unlock read");
@@ -95,11 +98,9 @@ void *decrypteur(){//threads de calculs
 		pthread_mutex_lock(&mut1); //lock le mut1
 		mdp=buffer1[fin1];//prend la premiere valeur de buf1 apres l espace vide
 		if(fin1==(size1-1)){//si fin1 est a la derniere case
-			fin1=0;//revient au debut
+			fin1=-1;//revient au debut
 		}
-		else{
-			fin1++;//sinon fin1 augmente de 1;
-		}
+		fin1++;//sinon fin1 augmente de 1;
 		pthread_mutex_unlock(&mut1); //unlock mut1
 		sem_post(&empty1); //1 slot vide en plus 
 		bool trouve=reversehash(mdp, bufferInter, 17);//si reversehash a trouve un inverse il le stocke dans bufferInter 
@@ -161,7 +162,7 @@ void *ecrire(){
 			pthread_mutex_unlock(&mut3);
 		}
 	}
-	int fd2=open("test-input/01_4c_1k.txt", O_WRONLY|O_CREAT|O_TRUNC);//peut etre troisieme parametre qui correspond aux droits du fichier mais inutile je pense nom du fichier de sortie File mais jsp si nom demande
+	int fd2=open("File.txt", O_WRONLY|O_CREAT|O_TRUNC);//peut etre troisieme parametre qui correspond aux droits du fichier mais inutile je pense nom du fichier de sortie File mais jsp si nom demande
 	if(fd2==-1){
 		perror("open File write");
 	}
