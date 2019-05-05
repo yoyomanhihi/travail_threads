@@ -158,6 +158,10 @@ void *ecrire(){
 				perror("node creation");
 			}
 			n->candid=candidat;
+			n=list->first->next;
+			for(int i=1; i<list->sizelist; i++){
+				n=n->next;
+			}
 			list->sizelist++;
 			pthread_mutex_unlock(&mut3);
 		}
