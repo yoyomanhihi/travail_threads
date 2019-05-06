@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <ctype.h>
 #include "sha256.h"
 #include "sha256.c"
 #include "reverse.h"
@@ -181,6 +182,8 @@ void *ecrire(){
 }
 
 int main(int argc, char *argv[]){
+
+
 //creation des sem
 	int e1=sem_init(&empty1, 0, 3);//cree semaphore vide qui compte 3 slots vides consommateur 1
 	if(e1==-1){//si erreur
@@ -232,9 +235,54 @@ int main(int argc, char *argv[]){
 	if(err_threads!=0){
 		perror("thread ecrire");
 	}
+
+	int cflag=0;
+	char *tvalue = NULL;
+	char *ovalue = NULL;
+	int index;
+	int z;
+
+	opterr=0;
+
+	while((z=getopt (argc, argv, "co:t:"))!=-1){
+		switch(z){
+			case 'c':
+				cflag=1;
+				break;
+			case 't':
+				tvalue=optarg;
+				break;
+			case 'o':
+				ovalue=optarg;
+				break;
+			case '?':
+				if(optopt=='t'){
+					fprintf(stderr, "Option -t requires an argument.\n");
+				}
+				if(optopt=='o'){
+					fprintf(stderr, "Option -%o requires an argument.\n", optopt);
+				}
+				else if(isprint(optopt)){
+					fprintf(stderr, "Unknown option '-%c'.\n", optopt);
+				}
+				else{
+					fprintf(stderr, "Unknown option character '\\x%x'.\n", optopt);
+				}
+				return 1;
+
+		}
+		printf("cflag=%d, tvalue=%s, ovalue=%s\n", cflag, tvalue, ovalue);
+		
+		for(index=optind; index<argc; index++){
+			printf ("Non-option argument %s\n", argv[index]);
+		}
+	}
+
 	pthread_join(lire_t, NULL);
 	pthread_join(decrypter_t, NULL);
 	pthread_join(ecrire_t, NULL);
+
+
 
 	return 0;
 }
