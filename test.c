@@ -11,6 +11,7 @@
 #include "sha256.c"
 #include "reverse.h"
 #include "reverse.c"
+int taille_fichier;
 uint8_t **buffer1;//taille M+2 avec M qui vaut le nombre de type de fichier (1, 2 ou 3)
 char* buffer2[5];//taille N+2 avec N le nombre de threads
 int size1=3;//taille de buffer1, sert plus tard
@@ -19,8 +20,8 @@ int debut1;//debut du buffer1 a partir de quoi le buffer est vide
 int fin1;//fin de la zone vide de buffer1
 int debut2=0;//idem que debut1 mais pour buffer2
 int fin2=0;//idem que fin1 mais pour buffer2
-bool lecture=true;//indique que lire est encore en cours
-bool decryptage=true;//indique que decrypteur est encore en cours
+//bool lecture=true;//indique que lire est encore en cours
+//bool decryptage=true;//indique que decrypteur est encore en cours
 pthread_mutex_t mut1;
 sem_t empty1; 
 sem_t empty2;
@@ -55,13 +56,10 @@ int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regard
 	return count;
 }
 
-void *lire(){//producteur qui lit dans les fichiers
+void *lire(void *fd){//producteur qui lit dans les fichiers
+	int fd1=*(int *)fd;
 	buffer1=(uint8_t **) malloc(3*sizeof(uint8_t *));
-	int fd1=open("test-input/01_4c_1k.bin", O_RDONLY);//ouverture du fichier
 	debut1=0;
-	if(fd1==-1){ //si erreur
-		perror("open file");
-	}
 	u_int8_t *rbuf1 = (u_int8_t *)malloc(sizeof(u_int8_t)*32); // cree le buffer pour read
 	while(read(fd1, rbuf1, sizeof(u_int8_t)*32)>0){//Tant qu'il y a a lire
 		u_int8_t *rbuf = (u_int8_t *)malloc(sizeof(u_int8_t)*32); // cree le buffer pour read7
@@ -84,7 +82,7 @@ void *lire(){//producteur qui lit dans les fichiers
 		}
 		sem_post(&full1); //meme chose en cas d erreur
 	}
-	lecture=false;//peut etre lock pour eviter probleme a la fin
+	//lecture=false;//peut etre lock pour eviter probleme a la fin
 	pthread_exit(NULL);	
 }
 
@@ -94,7 +92,8 @@ void *decrypteur(){//threads de calculs
 	char *bufferInter=(char *) malloc(sizeof(char)*17); //buffer intermediaire utile a la fonction reversehash
 	fin1=0;
 	u_int8_t *mdp;
-	while((lecture==true)||(debut1!=fin1)){//tant que le thread a encore a lire et que le buffer n est pas vide, juste a verifier que la condition debut1!=fin1 n accepte pas un buffer totalement rempli
+	int j = 0; //pour la boucle
+	while((debut1!=fin1)||j<taille_fichier){//tant que le thread a encore a lire et que le buffer n est pas vide, juste a verifier que la condition debut1!=fin1 n accepte pas un buffer totalement rempli
 		sem_wait(&full1);//attente d un slot rempli
 		pthread_mutex_lock(&mut1); //lock le mut1
 		mdp=buffer1[fin1];//prend la premiere valeur de buf1 apres l espace vide
@@ -116,11 +115,12 @@ void *decrypteur(){//threads de calculs
 			else{
 				debut2++;//sinon debut2 augmente de 1;
 			}
+			j++;
 			pthread_mutex_unlock(&mut2);
 			sem_post(&full2); //1 slot rempli en plus (5 max)
 		}
 	}
-	decryptage=false;
+	//decryptage=false;
 	pthread_exit(NULL);		
 }
 
@@ -128,7 +128,8 @@ void *ecrire(){
 	list_t *list=(list_t *) malloc(sizeof(list_t));
 	int max=-1;//maximum de voyelles ou consonnes lu
 	char* candidat=NULL;//variabe servant a stocker la valeur lue dans buffer2 initialisee a null au depart
-	while(decryptage==true||debut2!=fin2){//tant que la fonction decrypteur n a pas tremine et que le buffer2 n est pas vide, verifier condition 2 que pas de faille
+	int j =0;
+	while(j<taille_fichier||debut2!=fin2){//tant que j n'a pas atteint la taille du fichier ou que debut2 est different de fin2
 		sem_wait(&full2);
 		pthread_mutex_lock(&mut2);
 		candidat=buffer2[fin2];// verifier que pas de probleme
@@ -150,6 +151,7 @@ void *ecrire(){
 			n->candid=candidat;
 			list->first=n;
 			list->sizelist=1;
+			j++;
 			pthread_mutex_unlock(&mut3);
 		}
 		if(test==max){
@@ -164,6 +166,7 @@ void *ecrire(){
 				n=n->next;
 			}
 			list->sizelist++;
+			j++;
 			pthread_mutex_unlock(&mut3);
 		}
 	}
@@ -182,7 +185,17 @@ void *ecrire(){
 }
 
 int main(int argc, char *argv[]){
-
+//ouverture du fichier
+int fd=open("test-input/02_6c_5.bin", O_RDONLY);
+if(fd==-1){ //si erreur
+	perror("open file");
+}
+struct stat *recup=(struct stat *)malloc(sizeof(struct stat));
+int test=fstat(fd, recup);
+if(test==-1) //recuperer la taille du fichier
+	perror("stat");
+taille_fichier = recup->st_size;
+taille_fichier=taille_fichier/32; //divise par la taille d'un hash
 
 //creation des sem
 	int e1=sem_init(&empty1, 0, 3);//cree semaphore vide qui compte 3 slots vides consommateur 1
@@ -222,7 +235,7 @@ int main(int argc, char *argv[]){
 	pthread_t ecrire_t;
 
 
-	err_threads=pthread_create(&lire_t, NULL, lire, NULL);//cree le premier thread lire
+	err_threads=pthread_create(&lire_t, NULL, lire, &fd);//cree le premier thread lire
 	if(err_threads!=0){
 		perror("thread lire");
 	}
@@ -286,3 +299,4 @@ int main(int argc, char *argv[]){
 
 	return 0;
 }
+
