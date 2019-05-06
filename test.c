@@ -80,7 +80,10 @@ void *lire(void *fd){//producteur 1 qui lit dans les fichiers
 		}
 		sem_post(&full1); 
 	}
-	//lecture=false;
+	free(rbuf1);
+	if(close(fd1)==-1){
+		perror("error close file read");
+	}
 	pthread_exit(NULL);	
 }
 
@@ -166,16 +169,21 @@ void *ecrire(){
 			pthread_mutex_unlock(&mut3);
 		}
 	}
-	int fd2=open("File.txt", O_WRONLY|O_CREAT|O_TRUNC);//ouverture du fichier ou les candidats seront ecrits
+	int fd2=open("File.txt", O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);//ouverture du fichier ou les candidats seront ecrits
 	if(fd2==-1){
-		perror("open File write");
+		perror("error open File write");
 	}
+	node_t *n=list->first;
 	for(int i=1;i<=list->sizelist;i++){//parcourt la liste 
-		char *wbuff1=malloc(sizeof(char)*strlen(candidat)+1);
-		int b=write(fd2, wbuff1, sizeof(char)*(strlen(candidat)+1));
+		char *wbuff1=n->candid;
+		int b=write(fd2, wbuff1, sizeof(char)*(strlen(n->candid)));
 		if(b==-1){
 			perror("write error");
 		}
+	n=n->next;
+	}
+	if(close(fd2)==-1){
+		perror("error close file write");
 	}
 	pthread_exit(NULL);	
 }
