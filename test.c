@@ -39,7 +39,7 @@ typedef struct list{//represente la liste qui sert a stocker les candidats dans 
 int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regarder comment on gere ce cas
 	int len=strlen(mot); //variable qui comporte la taille du mot 
 	int count=0; //nombre de voyelle ou consonne
-	if(true) {//pas le bon if mais pour dire que le critere est voyelle
+	if(1==1) {//pas le bon if mais pour dire que le critere est voyelle
 		for(int i=0; i<len; i++){
 			if(mot[i]=='a' || mot[i]=='e' || mot[i]=='i' || mot[i]=='o' || mot[i]=='u' || mot[i]=='y')
 				count++;
@@ -115,12 +115,11 @@ void *decrypteur(){//threads de calculs
 			else{
 				debut2++;//sinon debut2 augmente de 1;
 			}
-			taille_fichier--;;
+			taille_fichier--;
 			pthread_mutex_unlock(&mut2);
 			sem_post(&full2); //1 slot rempli en plus (5 max)
 		}
 	}
-	//decryptage=false;
 	pthread_exit(NULL);		
 }
 
@@ -141,7 +140,7 @@ void *ecrire(){
 		int test=count(candidat);
 		pthread_mutex_unlock(&mut2);
 		sem_post(&empty2);
-		if(test>max){
+		if(test>max){//si on toruve un candidat plus precis encore 
 			pthread_mutex_lock(&mut3);
 			node_t *n=(node_t *) malloc(sizeof(node_t));//creation d un noeud
 			if(n==NULL){
@@ -151,21 +150,30 @@ void *ecrire(){
 			list->first=n;
 			list->sizelist=1;
 			taille_fichier--;
+			max=test;//max devient test 
 			pthread_mutex_unlock(&mut3);
 		}
-		if(test==max){
+		else if(test==max){//si on toruve un autre candidat
 			pthread_mutex_lock(&mut3);
-			node_t *n=(node_t *) malloc(sizeof(node_t));
-			if(n==NULL){
+			node_t *n=(node_t *) malloc(sizeof(node_t));//creation du nouveau noeud
+			if(n==NULL){//si erreur
 				perror("node creation");
 			}
 			n->candid=candidat;
-			n=list->first->next;
-			for(int i=1; i<list->sizelist; i++){
-				n=n->next;
+			/*if(list->first->next==NULL){//si il y a que un element dans la liste
+				list->first->next=n;
+				n->next=NULL;
 			}
+			else{//si plus que 1 element dans la liste*/
+			node_t *run=list->first;
+			while(run->next!=NULL){
+				run=run->next;
+			}
+			run->next=n;
+			n->next=NULL;
 			list->sizelist++;
 			taille_fichier--;
+			//}
 			pthread_mutex_unlock(&mut3);
 		}
 	}
@@ -174,13 +182,13 @@ void *ecrire(){
 		perror("error open File write");
 	}
 	node_t *n=list->first;
-	for(int i=1;i<=list->sizelist;i++){//parcourt la liste 
+	while(n->next!=NULL){//parcourt la liste 
 		char *wbuff1=n->candid;
 		int b=write(fd2, wbuff1, sizeof(char)*(strlen(n->candid)));
 		if(b==-1){
 			perror("write error");
 		}
-	n=n->next;
+		n=n->next;
 	}
 	if(close(fd2)==-1){
 		perror("error close file write");
@@ -254,6 +262,7 @@ free(recup); // a voir normalement ok mais voir au cas ou beug
 		perror("thread ecrire");
 	}
 
+//gerer les arguments
 	int cflag=0;
 	char *tvalue = NULL;
 	char *ovalue = NULL;
