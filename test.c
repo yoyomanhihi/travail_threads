@@ -115,10 +115,10 @@ void *decrypteur(){//threads de calculs
 			else{
 				debut2++;//sinon debut2 augmente de 1;
 			}
-			taille_fichier--;
 			pthread_mutex_unlock(&mut2);
 			sem_post(&full2); //1 slot rempli en plus (5 max)
 		}
+		taille_fichier--;
 	}
 	pthread_exit(NULL);		
 }
@@ -140,26 +140,12 @@ void *ecrire(){
 		int test=count(candidat);
 		pthread_mutex_unlock(&mut2);
 		sem_post(&empty2);
-		if(test>max){//si on toruve un candidat plus precis encore 
+		if(test==max){//si on toruve un autre candidat
 			pthread_mutex_lock(&mut3);
-			node_t *n=(node_t *) malloc(sizeof(node_t));//creation d un noeud
-			if(n==NULL){
-				perror("node creation");
-			}
-			n->candid=candidat;
-			list->first=n;
-			list->sizelist=1;
-			taille_fichier--;
-			max=test;//max devient test 
-			pthread_mutex_unlock(&mut3);
-		}
-		else if(test==max){//si on toruve un autre candidat
-			pthread_mutex_lock(&mut3);
-			node_t *n=(node_t *) malloc(sizeof(node_t));//creation du nouveau noeud
+			node_t *n=(node_t *) malloc(sizeof(node_t));//creation du nouveau noeud	
 			if(n==NULL){//si erreur
 				perror("node creation");
 			}
-			n->candid=candidat;
 			/*if(list->first->next==NULL){//si il y a que un element dans la liste
 				list->first->next=n;
 				n->next=NULL;
@@ -171,34 +157,50 @@ void *ecrire(){
 			}
 			run->next=n;
 			n->next=NULL;
+			n->candid=candidat;
 			list->sizelist++;
 			taille_fichier--;
 			//}
 			pthread_mutex_unlock(&mut3);
 		}
-	}
-	int fd2=open("File.txt", O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);//ouverture du fichier ou les candidats seront ecrits
-	if(fd2==-1){
-		perror("error open File write");
-	}
-	node_t *n=list->first;
-	while(n->next!=NULL){//parcourt la liste 
-		char *wbuff1=n->candid;
-		int b=write(fd2, wbuff1, sizeof(char)*(strlen(n->candid)));
-		if(b==-1){
-			perror("write error");
+		if(test>max){//si on toruve un candidat plus precis encore 
+			pthread_mutex_lock(&mut3);
+			node_t *n=(node_t *) malloc(sizeof(node_t));//creation d un noeud
+			if(n==NULL){
+				perror("node creation");
+			}
+			n->candid=candidat;
+			list->first=n;
+			n->next=NULL;
+			list->sizelist=1;
+			taille_fichier--;
+			max=test;//max devient test 
+			pthread_mutex_unlock(&mut3);
 		}
+	}
+	//int fd2=open("File.txt", O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);//ouverture du fichier ou les candidats seront ecrits
+	//if(fd2==-1){
+	//	perror("error open File write");
+	//}
+	node_t *n=list->first;
+	while(n!=NULL){//parcourt la liste 
+		//char *wbuff1=n->candid;
+		//int b=write(fd2, wbuff1, sizeof(char)*(strlen(n->candid)));
+		printf("candidat: %s \n", n->candid);
+	//	if(b==-1){
+		//	perror("write error");
+		//}
 		n=n->next;
 	}
-	if(close(fd2)==-1){
-		perror("error close file write");
-	}
+	//if(close(fd2)==-1){
+	//	perror("error close file write");
+	//}
 	pthread_exit(NULL);	
 }
 
 int main(int argc, char *argv[]){
 //ouverture du fichier
-int fd=open("test-input/02_6c_5.bin", O_RDONLY);
+int fd=open("test-input/01_4c_1k.bin", O_RDONLY);
 if(fd==-1){ //si erreur
 	perror("open file");
 }
