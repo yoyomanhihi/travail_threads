@@ -35,17 +35,22 @@ typedef struct list{//represente la liste qui sert a stocker les candidats dans 
 	struct node *first;
 	int sizelist;
 } list_t;
+int cflag=0;
+char *tvalue = NULL;
+char *ovalue = NULL;
 
 int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regarder comment on gere ce cas
 	int len=strlen(mot); //variable qui comporte la taille du mot 
 	int count=0; //nombre de voyelle ou consonne
-	if(1==1) {//pas le bon if mais pour dire que le critere est voyelle
+	if(cflag==0) {//pas le bon if mais pour dire que le critere est voyelle
+		printf("critère: voyelles \n");
 		for(int i=0; i<len; i++){
 			if(mot[i]=='a' || mot[i]=='e' || mot[i]=='i' || mot[i]=='o' || mot[i]=='u' || mot[i]=='y')
 				count++;
 		}
 	}
 	else {//si le critere de selection est consonne
+		printf("critère: consonnes \n");
 		for(int i=0; i<len; i++){
 			if(mot[i]!='a' && mot[i]!='e' && mot[i]!='i' && mot[i]!='o' && mot[i]!='u' && mot[i]!='y')
 				count++;
@@ -141,6 +146,11 @@ void *ecrire(){
 		pthread_mutex_unlock(&mut2);
 		sem_post(&empty2);
 		if(test==max){//si on toruve un autre candidat
+			printf("test==max \n");
+			char* corr=(char *) malloc (sizeof(strlen(candidat)+1));//variable de correction de bug
+			for(int i=0; i<=strlen(candidat); i++){
+				corr[i]=candidat[i];
+			}
 			pthread_mutex_lock(&mut3);
 			node_t *n=(node_t *) malloc(sizeof(node_t));//creation du nouveau noeud	
 			if(n==NULL){//si erreur
@@ -157,19 +167,24 @@ void *ecrire(){
 			}
 			run->next=n;
 			n->next=NULL;
-			n->candid=candidat;
+			n->candid=corr;
 			list->sizelist++;
 			taille_fichier--;
 			//}
 			pthread_mutex_unlock(&mut3);
 		}
 		if(test>max){//si on toruve un candidat plus precis encore 
+			printf("test>max \n");
+			char* corr=(char *) malloc (sizeof(strlen(candidat)+1));//variable de correction de bug
+			for(int i=0; i<=strlen(candidat); i++){
+				corr[i]=candidat[i];
+			}
 			pthread_mutex_lock(&mut3);
 			node_t *n=(node_t *) malloc(sizeof(node_t));//creation d un noeud
 			if(n==NULL){
 				perror("node creation");
 			}
-			n->candid=candidat;
+			n->candid=corr;
 			list->first=n;
 			n->next=NULL;
 			list->sizelist=1;
@@ -178,29 +193,29 @@ void *ecrire(){
 			pthread_mutex_unlock(&mut3);
 		}
 	}
-	//int fd2=open("File.txt", O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);//ouverture du fichier ou les candidats seront ecrits
-	//if(fd2==-1){
-	//	perror("error open File write");
-	//}
+	int fd2=open("File.txt", O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);//ouverture du fichier ou les candidats seront ecrits
+	if(fd2==-1){
+		perror("error open File write");
+	}
 	node_t *n=list->first;
 	while(n!=NULL){//parcourt la liste 
-		//char *wbuff1=n->candid;
-		//int b=write(fd2, wbuff1, sizeof(char)*(strlen(n->candid)));
+		char *wbuff1=n->candid;
+		int b=write(fd2, wbuff1, sizeof(char)*(strlen(n->candid)));
 		printf("candidat: %s \n", n->candid);
-	//	if(b==-1){
-		//	perror("write error");
-		//}
+		if(b==-1){
+			perror("write error");
+		}
 		n=n->next;
 	}
-	//if(close(fd2)==-1){
-	//	perror("error close file write");
-	//}
+	if(close(fd2)==-1){
+		perror("error close file write");
+	}
 	pthread_exit(NULL);	
 }
 
 int main(int argc, char *argv[]){
 //ouverture du fichier
-int fd=open("test-input/01_4c_1k.bin", O_RDONLY);
+int fd=open("test-input/02_6c_5.bin", O_RDONLY);
 if(fd==-1){ //si erreur
 	perror("open file");
 }
@@ -265,9 +280,6 @@ free(recup); // a voir normalement ok mais voir au cas ou beug
 	}
 
 //gerer les arguments
-	int cflag=0;
-	char *tvalue = NULL;
-	char *ovalue = NULL;
 	int index;
 	int z;
 
