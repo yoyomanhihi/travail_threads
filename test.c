@@ -122,10 +122,10 @@ void *decrypteur(){//threads de calculs
 			else{
 				debut2++;//sinon debut2 augmente de 1;
 			}
-			pthread_mutex_unlock(&mut2);
-			sem_post(&full2); //1 slot rempli en plus (5 max)
 		}
 		j++;
+		pthread_mutex_unlock(&mut2);
+		sem_post(&full2); //1 slot rempli en plus (5 max)
 	}
 	printf("je sors de la boucle decrypteur \n");
 	pthread_exit(NULL);		
@@ -192,7 +192,9 @@ void *ecrire(){
 			pthread_mutex_unlock(&mut3);
 		}
 		else{
+			pthread_mutex_lock(&mut3);
 			j++;
+			pthread_mutex_unlock(&mut3);
 		}
 	}
 	printf("je suis sorti de la boucle ecrire \n");
@@ -321,7 +323,7 @@ free(recup); // a voir normalement ok mais voir au cas ou beug
 		perror("thread lire");
 	}
 
-	for(int i=0;i<=tvalue;i++){
+	for(int i=0;i<tvalue;i++){
 		err_threads=pthread_create(&decrypter_t, NULL, decrypteur, NULL);//cree le second thread decrypteur
 		if(err_threads!=0){
 			perror("thread decrypteur");
@@ -335,7 +337,7 @@ free(recup); // a voir normalement ok mais voir au cas ou beug
 
 
 	pthread_join(lire_t, NULL);
-	for(int i=0;i<=tvalue;i++){
+	for(int i=0;i<tvalue;i++){
 		pthread_join(decrypter_t, NULL);
 	}
 	pthread_join(ecrire_t, NULL);
