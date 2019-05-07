@@ -42,8 +42,8 @@ char *ovalue = NULL;
 int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regarder comment on gere ce cas
 	int len=strlen(mot); //variable qui comporte la taille du mot 
 	int count=0; //nombre de voyelle ou consonne
-	if(cflag==0) {//pas le bon if mais pour dire que le critere est voyelle
-		printf("critère: voyelles \n");
+	if(cflag==0) {//le critere est voyelle
+		//printf("critère: voyelles \n");
 		for(int i=0; i<len; i++){
 			if(mot[i]=='a' || mot[i]=='e' || mot[i]=='i' || mot[i]=='o' || mot[i]=='u' || mot[i]=='y')
 				count++;
@@ -98,7 +98,8 @@ void *decrypteur(){//threads de calculs
 	char *bufferInter=(char *) malloc(sizeof(char)*17); //buffer intermediaire utile a la fonction reversehash
 	fin1=0;
 	u_int8_t *mdp;
-	while((debut1!=fin1)||taille_fichier>0){//tant qu on a pas decrypte tous les elements du fichier
+	int j=1;
+	while((debut1!=fin1)||j<=taille_fichier){//tant qu on a pas decrypte tous les elements du fichier
 		sem_wait(&full1);//attente d un slot rempli
 		pthread_mutex_lock(&mut1); //lock le mut1
 		mdp=buffer1[fin1];//prend la premiere valeur de buf1 apres l espace vide
@@ -123,16 +124,18 @@ void *decrypteur(){//threads de calculs
 			pthread_mutex_unlock(&mut2);
 			sem_post(&full2); //1 slot rempli en plus (5 max)
 		}
-		taille_fichier--;
+		j++;
 	}
+	printf("je sors de la boucle decrypteur \n");
 	pthread_exit(NULL);		
 }
 
 void *ecrire(){
 	list_t *list=(list_t *) malloc(sizeof(list_t));
 	int max=-1;//maximum de voyelles ou consonnes lu
+	int j=4;
 	char* candidat=NULL;//variabe servant a stocker la valeur lue dans buffer2 initialisee a null au depart
-	while(taille_fichier>0||debut2!=fin2){//tant que j n'a pas atteint la taille du fichier ou que debut2 est different de fin2
+	while(j<=taille_fichier||debut2!=fin2){//tant que j n'a pas atteint la taille du fichier ou que debut2 est different de fin2
 		sem_wait(&full2);
 		pthread_mutex_lock(&mut2);
 		candidat=buffer2[fin2];// verifier que pas de probleme
@@ -142,11 +145,12 @@ void *ecrire(){
 		else{
 			fin2++;//sinon fin2 augmente de 1;
 		}
+		printf("je vais faire count \n");
 		int test=count(candidat);
 		pthread_mutex_unlock(&mut2);
 		sem_post(&empty2);
-		if(test==max){//si on toruve un autre candidat
-			printf("test==max \n");
+		if(test==max){//si on trouve un autre candidat
+			//printf("test==max \n");
 			char* corr=(char *) malloc (sizeof(strlen(candidat)+1));//variable de correction de bug
 			for(int i=0; i<=strlen(candidat); i++){
 				corr[i]=candidat[i];
@@ -169,12 +173,12 @@ void *ecrire(){
 			n->next=NULL;
 			n->candid=corr;
 			list->sizelist++;
-			taille_fichier--;
+			j++;
 			//}
 			pthread_mutex_unlock(&mut3);
 		}
-		if(test>max){//si on toruve un candidat plus precis encore 
-			printf("test>max \n");
+		if(test>max){//si on trouve un candidat plus precis encore 
+			//printf("test>max \n");
 			char* corr=(char *) malloc (sizeof(strlen(candidat)+1));//variable de correction de bug
 			for(int i=0; i<=strlen(candidat); i++){
 				corr[i]=candidat[i];
@@ -188,11 +192,12 @@ void *ecrire(){
 			list->first=n;
 			n->next=NULL;
 			list->sizelist=1;
-			taille_fichier--;
+			j++;
 			max=test;//max devient test 
 			pthread_mutex_unlock(&mut3);
 		}
 	}
+	printf("je suis sorti de la boucle ecrire \n");
 	int fd2=open("File.txt", O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);//ouverture du fichier ou les candidats seront ecrits
 	if(fd2==-1){
 		perror("error open File write");
