@@ -335,7 +335,9 @@ free(recup); // a voir normalement ok mais voir au cas ou beug
 
 
 	pthread_join(lire_t, NULL);
-	pthread_join(decrypter_t, NULL);
+	for(int i=0;i<=tvalue;i++){
+		pthread_join(decrypter_t, NULL);
+	}
 	pthread_join(ecrire_t, NULL);
 
 
