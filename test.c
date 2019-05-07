@@ -137,10 +137,9 @@ void *ecrire(){
 	int j=1;
 	printf("taille du fichier = %d\n", taille_fichier);
 	char* candidat=NULL;//variabe servant a stocker la valeur lue dans buffer2 initialisee a null au depart
-	while(j<=taille_fichier){//tant que j n'a pas atteint la taille du fichier ou que debut2 est different de fin2
+	while(j<=taille_fichier||debut2!=fin2){//tant que j n'a pas atteint la taille du fichier ou que debut2 est different de fin2
 		sem_wait(&full2);
 		pthread_mutex_lock(&mut2);
-		printf("j = %d\n", j);
 		candidat=buffer2[fin2];// verifier que pas de probleme
 		if(fin2==(size2-1)){//si fin2 est a la derniere case
 			fin2=0;//revient au debut
@@ -193,60 +192,38 @@ void *ecrire(){
 			pthread_mutex_unlock(&mut3);
 		}
 		else{
-			pthread_mutex_lock(&mut3);
 			j++;
-			pthread_mutex_unlock(&mut3);
 		}
 	}
 	printf("je suis sorti de la boucle ecrire \n");
-<<<<<<< Updated upstream
-	int fd2=open("File.txt", O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);//ouverture du fichier ou les candidats seront ecrits
-	if(fd2==-1){
-		perror("error open File write");
-	}
 	node_t *n=list->first;//noeud runner pour parcourir la liste
 	int count=0;
-	while(n!=NULL){//parcourt la liste 
-		char *wbuff1=n->candid;
-		int b=write(fd2, wbuff1, sizeof(char)*(strlen(n->candid)));
-		count++;
-		printf("Candidat : %s \n", n->candid);
-		if(b==-1){
-			perror("write error");
-=======
-	if(ovalue!=NULL){
-		int fd2=open(ovalue, O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);//ouverture du fichier ou les candidats seront ecrits
+	if(ovalue==NULL){
+		while(n!=NULL){//parcourt la liste 
+			count++;
+			printf("Candidat : %s \n", n->candid);
+			n=n->next;
+		}
+	}
+	else{
+		int fd2=open(ovalue, O_WRONLY|O_TRUNC|O_CREAT);//ouverture du fichier ou les candidats seront ecrits
 		if(fd2==-1){
 			perror("error open File write");
 		}
-		node_t *n=list->first;
 		while(n!=NULL){//parcourt la liste 
 			char *wbuff1=n->candid;
 			int b=write(fd2, wbuff1, sizeof(char)*(strlen(n->candid)));
-			printf("candidat: %s \n", n->candid);
+			count++;
 			if(b==-1){
 				perror("write error");
 			}
 			n=n->next;
 		}
 		if(close(fd2)==-1){
-			perror("error close file write");
->>>>>>> Stashed changes
-		}
-	}
-<<<<<<< Updated upstream
-	printf("Le nombre de candidats est de %d\n", count);
-	if(close(fd2)==-1){
 		perror("error close file write");
-=======
-	else{
-		node_t *n=list->first;
-		while(n!=NULL){//parcourt la liste 
-			printf("candidat: %s \n", n->candid);
-			n=n->next;
 		}
->>>>>>> Stashed changes
 	}
+	printf("Le nombre de candidats est de %d\n", count);
 	pthread_exit(NULL);	
 }
 
@@ -295,6 +272,7 @@ free(recup); // a voir normalement ok mais voir au cas ou beug
 		perror("init mutex3 decrypt");
 	}
 
+
 //gerer les arguments
 	int index;
 	int z;
@@ -307,7 +285,7 @@ free(recup); // a voir normalement ok mais voir au cas ou beug
 				cflag=1;
 				break;
 			case 't':
-				tvalue=*optarg;
+				tvalue=atoi(optarg);
 				break;
 			case 'o':
 				ovalue=optarg;
@@ -317,10 +295,7 @@ free(recup); // a voir normalement ok mais voir au cas ou beug
 					fprintf(stderr, "Option -t requires an argument.\n");
 				}
 				if(optopt=='o'){
-					fprintf(stderr, "Option -%o requires an argument.\n", optopt);
-				}
-				else if(isprint(optopt)){
-					fprintf(stderr, "Unknown option '-%c'.\n", optopt);
+					fprintf(stderr, "Option -o requires an argument.\n");
 				}
 				else{
 					fprintf(stderr, "Unknown option character '\\x%x'.\n", optopt);
@@ -328,12 +303,12 @@ free(recup); // a voir normalement ok mais voir au cas ou beug
 				return 1;
 
 		}
-		printf("cflag=%d, tvalue=%d, ovalue=%s\n", cflag, tvalue, ovalue);
 		
 		for(index=optind; index<argc; index++){
 			printf ("Non-option argument %s\n", argv[index]);
 		}
 	}
+	printf("cflag=%d, tvalue=%d, ovalue=%s\n", cflag, tvalue, ovalue);
 
 //creation des threads
 	int err_threads;
@@ -341,30 +316,29 @@ free(recup); // a voir normalement ok mais voir au cas ou beug
 	pthread_t decrypter_t;
 	pthread_t ecrire_t;
 
+	err_threads=pthread_create(&lire_t, NULL, lire, &fd);//cree le premier thread lire
+	if(err_threads!=0){
+		perror("thread lire");
+	}
 
-	for(int i=1; i<=tvalue; i++){
-		err_threads=pthread_create(&lire_t, NULL, lire, &fd);//cree le premier thread lire
-		if(err_threads!=0){
-			perror("thread lire");
-		}
-
+	for(int i=0;i<=tvalue;i++){
 		err_threads=pthread_create(&decrypter_t, NULL, decrypteur, NULL);//cree le second thread decrypteur
 		if(err_threads!=0){
 			perror("thread decrypteur");
 		}
-		err_threads=pthread_create(&ecrire_t, NULL, ecrire, NULL);//cree le dernier thread ecrire
-		if(err_threads!=0){
-			perror("thread ecrire");
-		}
-
-
-
-		pthread_join(lire_t, NULL);
-		pthread_join(decrypter_t, NULL);
-		pthread_join(ecrire_t, NULL);
 	}
+
+	err_threads=pthread_create(&ecrire_t, NULL, ecrire, NULL);//cree le dernier thread ecrire
+	if(err_threads!=0){
+		perror("thread ecrire");
+	}
+
+
+	pthread_join(lire_t, NULL);
+	pthread_join(decrypter_t, NULL);
+	pthread_join(ecrire_t, NULL);
+
 
 
 	return 0;
 }
-
