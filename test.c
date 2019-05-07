@@ -20,6 +20,7 @@ int debut1;//debut du buffer1 a partir de quoi le buffer est vide
 int fin1;//fin de la zone vide de buffer1
 int debut2=0;//idem que debut1 mais pour buffer2
 int fin2=0;//idem que fin1 mais pour buffer2
+//bool decryptage=true;
 sem_t empty1; 
 sem_t empty2;
 sem_t full1;
@@ -86,7 +87,7 @@ void *lire(void *fd){//producteur 1 qui lit dans les fichiers
 		sem_post(&full1); 
 	}
 	free(rbuf1);
-	if(close(fd1)==-1){
+	if(close(fd1)==-1){//si erreur lors de la fermeture
 		perror("error close file read");
 	}
 	pthread_exit(NULL);	
@@ -132,12 +133,14 @@ void *decrypteur(){//threads de calculs
 
 void *ecrire(){
 	list_t *list=(list_t *) malloc(sizeof(list_t));
-	int max=-1;//maximum de voyelles ou consonnes lu
-	int j=4;
+	int max=-1;//maximum de voyelles ou consonnes lues
+	int j=1;
+	printf("taille du fichier = %d\n", taille_fichier);
 	char* candidat=NULL;//variabe servant a stocker la valeur lue dans buffer2 initialisee a null au depart
 	while(j<=taille_fichier||debut2!=fin2){//tant que j n'a pas atteint la taille du fichier ou que debut2 est different de fin2
 		sem_wait(&full2);
 		pthread_mutex_lock(&mut2);
+		printf("j = %d\n", j);
 		candidat=buffer2[fin2];// verifier que pas de probleme
 		if(fin2==(size2-1)){//si fin2 est a la derniere case
 			fin2=0;//revient au debut
@@ -145,12 +148,11 @@ void *ecrire(){
 		else{
 			fin2++;//sinon fin2 augmente de 1;
 		}
-		printf("je vais faire count \n");
-		int test=count(candidat);
+		int test=count(candidat);//on regarde le nombre de voyelles/consonnes en fonction du critere grace a count
 		pthread_mutex_unlock(&mut2);
 		sem_post(&empty2);
-		if(test==max){//si on trouve un autre candidat
-			//printf("test==max \n");
+		if(test==max){//si on trouve un autre candidat avec le meme nombre de voyelles/consonnes
+			printf("test==max \n");
 			char* corr=(char *) malloc (sizeof(strlen(candidat)+1));//variable de correction de bug
 			for(int i=0; i<=strlen(candidat); i++){
 				corr[i]=candidat[i];
@@ -160,12 +162,7 @@ void *ecrire(){
 			if(n==NULL){//si erreur
 				perror("node creation");
 			}
-			/*if(list->first->next==NULL){//si il y a que un element dans la liste
-				list->first->next=n;
-				n->next=NULL;
-			}
-			else{//si plus que 1 element dans la liste*/
-			node_t *run=list->first;
+			node_t *run=list->first;//noeud runner pour parcourir la liste
 			while(run->next!=NULL){
 				run=run->next;
 			}
@@ -174,11 +171,10 @@ void *ecrire(){
 			n->candid=corr;
 			list->sizelist++;
 			j++;
-			//}
 			pthread_mutex_unlock(&mut3);
 		}
-		if(test>max){//si on trouve un candidat plus precis encore 
-			//printf("test>max \n");
+		else if(test>max){//si on trouve un candidat plus precis encore 
+			printf("test>max \n");
 			char* corr=(char *) malloc (sizeof(strlen(candidat)+1));//variable de correction de bug
 			for(int i=0; i<=strlen(candidat); i++){
 				corr[i]=candidat[i];
@@ -192,8 +188,13 @@ void *ecrire(){
 			list->first=n;
 			n->next=NULL;
 			list->sizelist=1;
-			j++;
+			j++;	
 			max=test;//max devient test 
+			pthread_mutex_unlock(&mut3);
+		}
+		else{
+			pthread_mutex_lock(&mut3);
+			j++;
 			pthread_mutex_unlock(&mut3);
 		}
 	}
@@ -202,16 +203,19 @@ void *ecrire(){
 	if(fd2==-1){
 		perror("error open File write");
 	}
-	node_t *n=list->first;
+	node_t *n=list->first;//noeud runner pour parcourir la liste
+	int count=0;
 	while(n!=NULL){//parcourt la liste 
 		char *wbuff1=n->candid;
 		int b=write(fd2, wbuff1, sizeof(char)*(strlen(n->candid)));
-		printf("candidat: %s \n", n->candid);
+		count++;
+		printf("Candidat : %s \n", n->candid);
 		if(b==-1){
 			perror("write error");
 		}
 		n=n->next;
 	}
+	printf("Le nombre de candidats est de %d\n", count);
 	if(close(fd2)==-1){
 		perror("error close file write");
 	}
@@ -220,7 +224,7 @@ void *ecrire(){
 
 int main(int argc, char *argv[]){
 //ouverture du fichier
-int fd=open("test-input/02_6c_5.bin", O_RDONLY);
+int fd=open("test-input/01_4c_1k.bin", O_RDONLY);
 if(fd==-1){ //si erreur
 	perror("open file");
 }
