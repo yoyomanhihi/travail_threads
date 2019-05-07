@@ -37,7 +37,7 @@ typedef struct list{//represente la liste qui sert a stocker les candidats dans 
 	int sizelist;
 } list_t;
 int cflag=0;
-char *tvalue = NULL;
+int tvalue = 1;
 char *ovalue = NULL;
 
 int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regarder comment on gere ce cas
@@ -137,7 +137,7 @@ void *ecrire(){
 	int j=1;
 	printf("taille du fichier = %d\n", taille_fichier);
 	char* candidat=NULL;//variabe servant a stocker la valeur lue dans buffer2 initialisee a null au depart
-	while(j<=taille_fichier||debut2!=fin2){//tant que j n'a pas atteint la taille du fichier ou que debut2 est different de fin2
+	while(j<=taille_fichier){//tant que j n'a pas atteint la taille du fichier ou que debut2 est different de fin2
 		sem_wait(&full2);
 		pthread_mutex_lock(&mut2);
 		printf("j = %d\n", j);
@@ -199,6 +199,7 @@ void *ecrire(){
 		}
 	}
 	printf("je suis sorti de la boucle ecrire \n");
+<<<<<<< Updated upstream
 	int fd2=open("File.txt", O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);//ouverture du fichier ou les candidats seront ecrits
 	if(fd2==-1){
 		perror("error open File write");
@@ -212,12 +213,39 @@ void *ecrire(){
 		printf("Candidat : %s \n", n->candid);
 		if(b==-1){
 			perror("write error");
+=======
+	if(ovalue!=NULL){
+		int fd2=open(ovalue, O_WRONLY|O_TRUNC|O_CREAT, S_IRUSR|S_IWUSR);//ouverture du fichier ou les candidats seront ecrits
+		if(fd2==-1){
+			perror("error open File write");
 		}
-		n=n->next;
+		node_t *n=list->first;
+		while(n!=NULL){//parcourt la liste 
+			char *wbuff1=n->candid;
+			int b=write(fd2, wbuff1, sizeof(char)*(strlen(n->candid)));
+			printf("candidat: %s \n", n->candid);
+			if(b==-1){
+				perror("write error");
+			}
+			n=n->next;
+		}
+		if(close(fd2)==-1){
+			perror("error close file write");
+>>>>>>> Stashed changes
+		}
 	}
+<<<<<<< Updated upstream
 	printf("Le nombre de candidats est de %d\n", count);
 	if(close(fd2)==-1){
 		perror("error close file write");
+=======
+	else{
+		node_t *n=list->first;
+		while(n!=NULL){//parcourt la liste 
+			printf("candidat: %s \n", n->candid);
+			n=n->next;
+		}
+>>>>>>> Stashed changes
 	}
 	pthread_exit(NULL);	
 }
@@ -267,27 +295,6 @@ free(recup); // a voir normalement ok mais voir au cas ou beug
 		perror("init mutex3 decrypt");
 	}
 
-//creation des threads
-	int err_threads;
-	pthread_t lire_t;
-	pthread_t decrypter_t;
-	pthread_t ecrire_t;
-
-
-	err_threads=pthread_create(&lire_t, NULL, lire, &fd);//cree le premier thread lire
-	if(err_threads!=0){
-		perror("thread lire");
-	}
-
-	err_threads=pthread_create(&decrypter_t, NULL, decrypteur, NULL);//cree le second thread decrypteur
-	if(err_threads!=0){
-		perror("thread decrypteur");
-	}
-	err_threads=pthread_create(&ecrire_t, NULL, ecrire, NULL);//cree le dernier thread ecrire
-	if(err_threads!=0){
-		perror("thread ecrire");
-	}
-
 //gerer les arguments
 	int index;
 	int z;
@@ -300,7 +307,7 @@ free(recup); // a voir normalement ok mais voir au cas ou beug
 				cflag=1;
 				break;
 			case 't':
-				tvalue=optarg;
+				tvalue=*optarg;
 				break;
 			case 'o':
 				ovalue=optarg;
@@ -321,17 +328,41 @@ free(recup); // a voir normalement ok mais voir au cas ou beug
 				return 1;
 
 		}
-		printf("cflag=%d, tvalue=%s, ovalue=%s\n", cflag, tvalue, ovalue);
+		printf("cflag=%d, tvalue=%d, ovalue=%s\n", cflag, tvalue, ovalue);
 		
 		for(index=optind; index<argc; index++){
 			printf ("Non-option argument %s\n", argv[index]);
 		}
 	}
 
-	pthread_join(lire_t, NULL);
-	pthread_join(decrypter_t, NULL);
-	pthread_join(ecrire_t, NULL);
+//creation des threads
+	int err_threads;
+	pthread_t lire_t;
+	pthread_t decrypter_t;
+	pthread_t ecrire_t;
 
+
+	for(int i=1; i<=tvalue; i++){
+		err_threads=pthread_create(&lire_t, NULL, lire, &fd);//cree le premier thread lire
+		if(err_threads!=0){
+			perror("thread lire");
+		}
+
+		err_threads=pthread_create(&decrypter_t, NULL, decrypteur, NULL);//cree le second thread decrypteur
+		if(err_threads!=0){
+			perror("thread decrypteur");
+		}
+		err_threads=pthread_create(&ecrire_t, NULL, ecrire, NULL);//cree le dernier thread ecrire
+		if(err_threads!=0){
+			perror("thread ecrire");
+		}
+
+
+
+		pthread_join(lire_t, NULL);
+		pthread_join(decrypter_t, NULL);
+		pthread_join(ecrire_t, NULL);
+	}
 
 
 	return 0;
