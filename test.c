@@ -21,6 +21,7 @@ int fin1;//fin de la zone vide de buffer1
 int debut2=0;//idem que debut1 mais pour buffer2
 int fin2=0;//idem que fin1 mais pour buffer2
 int j=1; //j va augmenter jusqu a atteindre taille_fichier dans decrypteur qui est une condition de la boucle while
+int ilire=0;
 
 //creation des semaphores 
 sem_t empty1; 
@@ -47,7 +48,6 @@ typedef struct list{//represente la liste qui sert a stocker les candidats dans 
 int cflag=0;
 int tvalue = 1;
 char *ovalue = NULL;
-int tab [50];
 
 //fonction count qui compte les voyelles ou les consonnes en fonction du critere de selection
 int count(char* mot){ 
@@ -69,35 +69,37 @@ int count(char* mot){
 }
 
 //producteur 1 qui lit dans les fichiers
-void *lire(void *fd){
-	int fd1=*(int *)fd;//cast en int du fd donne en argument 
-	buffer1=(uint8_t **) malloc(3*sizeof(uint8_t *));
-	debut1=0;
-	u_int8_t *rbuf1 = (u_int8_t *)malloc(sizeof(u_int8_t)*32); //cree le buffer pour read
-	while(read(fd1, rbuf1, sizeof(u_int8_t)*32)>0){//Tant qu'il y a a lire
-		u_int8_t *rbuf = (u_int8_t *)malloc(sizeof(u_int8_t)*32); // cree le buffer pour read7
-		for(int i=0; i<32; i++){//copie de rbuf1 dans rbuf 
-			rbuf[i]=rbuf1[i];
+void *lire(void* tab[]){
+	while(tab[ilire]!=NULL){
+		int fd1=*(int *)tab[ilire];//cast en int du fd donne en argument 
+		buffer1=(uint8_t **) malloc(3*sizeof(uint8_t *));
+		debut1=0;
+		u_int8_t *rbuf1 = (u_int8_t *)malloc(sizeof(u_int8_t)*32); //cree le buffer pour read
+		while(read(fd1, rbuf1, sizeof(u_int8_t)*32)>0){//Tant qu'il y a a lire
+			u_int8_t *rbuf = (u_int8_t *)malloc(sizeof(u_int8_t)*32); // cree le buffer pour read7
+			for(int i=0; i<32; i++){//copie de rbuf1 dans rbuf 
+				rbuf[i]=rbuf1[i];
+			}
+			sem_wait(&empty1); 
+			int err1 = pthread_mutex_lock(&mut1); //lock le mut1
+			if(err1!=0){//si erreur
+				perror("mutex lock read"); 
+			}
+			buffer1[debut1]=rbuf;//inserer le hash dans le buffer a la premiere case libre
+			if(debut1==(size1-1)){//si debut1 est a la derniere case
+				debut1=-1;//revient au debut
+			}
+			debut1++;//sinon debut1 augmente de 1;
+			err1 = pthread_mutex_unlock(&mut1);//unlock le mut1
+			if(err1!=0){//si erreur
+				perror("mutex unlock read");
+			}
+			sem_post(&full1); 
 		}
-		sem_wait(&empty1); 
-		int err1 = pthread_mutex_lock(&mut1); //lock le mut1
-		if(err1!=0){//si erreur
-			perror("mutex lock read"); 
+		free(rbuf1);
+		if(close(fd1)==-1){//si erreur lors de la fermeture
+			perror("error close file read");
 		}
-		buffer1[debut1]=rbuf;//inserer le hash dans le buffer a la premiere case libre
-		if(debut1==(size1-1)){//si debut1 est a la derniere case
-			debut1=-1;//revient au debut
-		}
-		debut1++;//sinon debut1 augmente de 1;
-		err1 = pthread_mutex_unlock(&mut1);//unlock le mut1
-		if(err1!=0){//si erreur
-			perror("mutex unlock read");
-		}
-		sem_post(&full1); 
-	}
-	free(rbuf1);
-	if(close(fd1)==-1){//si erreur lors de la fermeture
-		perror("error close file read");
 	}
 	pthread_exit(NULL);	
 }
@@ -294,6 +296,7 @@ free(recup);
 	int index;
 	int z;
 	int i=0;
+	int tab [50];
 
 	opterr=0;
 
@@ -341,7 +344,7 @@ free(recup);
 	pthread_t decrypter_t[tvalue];
 	pthread_t ecrire_t;
 
-	err_threads=pthread_create(&lire_t, NULL, &lire, &fd);//cree le premier thread lire
+	err_threads=pthread_create(&lire_t, NULL, &lire, &tab);//cree le premier thread lire
 	if(err_threads!=0){
 		perror("thread lire");
 	}
