@@ -47,6 +47,7 @@ typedef struct list{//represente la liste qui sert a stocker les candidats dans 
 int cflag=0;
 int tvalue = 1;
 char *ovalue = NULL;
+int tab [50];
 
 //fonction count qui compte les voyelles ou les consonnes en fonction du critere de selection
 int count(char* mot){ 
@@ -285,6 +286,7 @@ free(recup);
 //gerer les arguments
 	int index;
 	int z;
+	int i=0;
 
 	opterr=0;
 
@@ -315,6 +317,13 @@ free(recup);
 		
 		for(index=optind; index<argc; index++){
 			printf ("Non-option argument %s\n", argv[index]);
+			int fd=open(argv[index], O_RDONLY);
+			tab[i]=fd;
+			i++;
+		}
+
+		for(int i=0; tab[i]!=0; i++){
+			printf("%dppp", tab[i]);
 		}
 	}
 	printf("cflag=%d, tvalue=%d, ovalue=%s\n", cflag, tvalue, ovalue);
