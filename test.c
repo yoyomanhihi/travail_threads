@@ -170,13 +170,20 @@ void *ecrire(){
 				perror("node creation");
 			}
 			node_t *run=list->first;//noeud runner pour parcourir la liste
+			int doublons=-1;
 			while(run->next!=NULL){
+				if(strcmp(run->candid, corr)==0){//gestion des doublons, si le candidat existe deja, on initialise doublons a 0
+					doublons=0;
+					printf("doublons = %d\n", doublons);
+				}
 				run=run->next;
 			}
-			run->next=n;
-			n->next=NULL;
-			n->candid=corr;
-			list->sizelist++;
+			if(doublons!=0){//si le candidat n'existe pas on l ajoute a la liste
+				run->next=n;
+				n->next=NULL;
+				n->candid=corr;
+				list->sizelist++;
+			}
 			k++;
 			pthread_mutex_unlock(&mut3);
 		}
