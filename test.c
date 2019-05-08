@@ -39,6 +39,7 @@ typedef struct list{//represente la liste qui sert a stocker les candidats dans 
 int cflag=0;
 int tvalue = 1;
 char *ovalue = NULL;
+int j=1;
 
 int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regarder comment on gere ce cas
 	int len=strlen(mot); //variable qui comporte la taille du mot 
@@ -97,10 +98,9 @@ void *lire(void *fd){//producteur 1 qui lit dans les fichiers
 //consommateur 1 et producteur 2 
 void *decrypteur(){//threads de calculs
 	char *bufferInter=(char *) malloc(sizeof(char)*17); //buffer intermediaire utile a la fonction reversehash
-	fin1=0;
 	u_int8_t *mdp;
-	int j=1;
 	while((debut1!=fin1)||j<=taille_fichier){//tant qu on a pas decrypte tous les elements du fichier
+		printf("%d \n", j);
 		sem_wait(&full1);//attente d un slot rempli
 		pthread_mutex_lock(&mut1); //lock le mut1
 		mdp=buffer1[fin1];//prend la premiere valeur de buf1 apres l espace vide
@@ -112,9 +112,9 @@ void *decrypteur(){//threads de calculs
 		sem_post(&empty1); //1 slot vide en plus 
 		bool trouve=reversehash(mdp, bufferInter, 17);//si reversehash a trouve un inverse il le stocke dans bufferInter 
 		printf("%s\n", bufferInter);
+		sem_wait(&empty2);//attente d'un slot libre (5 max)
+		pthread_mutex_lock(&mut2);
 		if(trouve==true){
-			sem_wait(&empty2);//attente d'un slot libre (5 max)
-			pthread_mutex_lock(&mut2);
 			buffer2[debut2]=bufferInter;//on remet dans le deuxieme buffer le mdp passe dans reversehash qui se trouve dans bufferinter
 			if(debut2==(size2-1)){//si debut2 est a la derniere case
 				debut2=0;//revient au debut
@@ -134,10 +134,10 @@ void *decrypteur(){//threads de calculs
 void *ecrire(){
 	list_t *list=(list_t *) malloc(sizeof(list_t));
 	int max=-1;//maximum de voyelles ou consonnes lues
-	int j=1;
+	int k=1;
 	printf("taille du fichier = %d\n", taille_fichier);
 	char* candidat=NULL;//variabe servant a stocker la valeur lue dans buffer2 initialisee a null au depart
-	while(j<=taille_fichier||debut2!=fin2){//tant que j n'a pas atteint la taille du fichier ou que debut2 est different de fin2
+	while(k<=taille_fichier||debut2!=fin2){//tant que k n'a pas atteint la taille du fichier ou que debut2 est different de fin2
 		sem_wait(&full2);
 		pthread_mutex_lock(&mut2);
 		candidat=buffer2[fin2];// verifier que pas de probleme
@@ -169,7 +169,7 @@ void *ecrire(){
 			n->next=NULL;
 			n->candid=corr;
 			list->sizelist++;
-			j++;
+			k++;
 			pthread_mutex_unlock(&mut3);
 		}
 		else if(test>max){//si on trouve un candidat plus precis encore 
@@ -187,13 +187,13 @@ void *ecrire(){
 			list->first=n;
 			n->next=NULL;
 			list->sizelist=1;
-			j++;	
+			k++;	
 			max=test;//max devient test 
 			pthread_mutex_unlock(&mut3);
 		}
 		else{
 			pthread_mutex_lock(&mut3);
-			j++;
+			k++;
 			pthread_mutex_unlock(&mut3);
 		}
 	}
