@@ -20,14 +20,20 @@ int debut1;//debut du buffer1 a partir de quoi le buffer est vide
 int fin1;//fin de la zone vide de buffer1
 int debut2=0;//idem que debut1 mais pour buffer2
 int fin2=0;//idem que fin1 mais pour buffer2
-//bool decryptage=true;
+int j=1; //j va augmenter jusqu a atteindre taille_fichier dans decrypteur qui est une condition de la boucle while
+
+//creation des semaphores 
 sem_t empty1; 
 sem_t empty2;
 sem_t full1;
 sem_t full2;
-pthread_mutex_t mut1;
-pthread_mutex_t mut2;
+
+//creation des mutex
+pthread_mutex_t mut1;//mutex servant a la fonction lire
+pthread_mutex_t mut2;//mutex servant a la fonction decrypteur
 pthread_mutex_t mut3;//mutex servant a ecrire dans fichier de sortie
+
+//creation d une structure list_t et d une structure node_t permettant de stocker les candidats dans ecrire
 typedef struct node{//represente un noeud 
 	struct node *next;
 	char* candid;
@@ -36,23 +42,23 @@ typedef struct list{//represente la liste qui sert a stocker les candidats dans 
 	struct node *first;
 	int sizelist;
 } list_t;
+
+//variables utiles pour getopt
 int cflag=0;
 int tvalue = 1;
 char *ovalue = NULL;
-int j=1;
 
-int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regarder comment on gere ce cas
+//fonction count qui compte les voyelles ou les consonnes en fonction du critere de selection
+int count(char* mot){ 
 	int len=strlen(mot); //variable qui comporte la taille du mot 
 	int count=0; //nombre de voyelle ou consonne
 	if(cflag==0) {//le critere est voyelle
-		//printf("critère: voyelles \n");
 		for(int i=0; i<len; i++){
 			if(mot[i]=='a' || mot[i]=='e' || mot[i]=='i' || mot[i]=='o' || mot[i]=='u' || mot[i]=='y')
 				count++;
 		}
 	}
-	else {//si le critere de selection est consonne
-		printf("critère: consonnes \n");
+	else {//le critere est consonne
 		for(int i=0; i<len; i++){
 			if(mot[i]!='a' && mot[i]!='e' && mot[i]!='i' && mot[i]!='o' && mot[i]!='u' && mot[i]!='y')
 				count++;
@@ -60,12 +66,13 @@ int count(char* mot){ //compter les voyelles ou les consonnes mais faudra regard
 	}
 	return count;
 }
-//producteur 1
-void *lire(void *fd){//producteur 1 qui lit dans les fichiers
-	int fd1=*(int *)fd;
+
+//producteur 1 qui lit dans les fichiers
+void *lire(void *fd){
+	int fd1=*(int *)fd;//cast en int du fd donne en argument 
 	buffer1=(uint8_t **) malloc(3*sizeof(uint8_t *));
 	debut1=0;
-	u_int8_t *rbuf1 = (u_int8_t *)malloc(sizeof(u_int8_t)*32); // cree le buffer pour read
+	u_int8_t *rbuf1 = (u_int8_t *)malloc(sizeof(u_int8_t)*32); //cree le buffer pour read
 	while(read(fd1, rbuf1, sizeof(u_int8_t)*32)>0){//Tant qu'il y a a lire
 		u_int8_t *rbuf = (u_int8_t *)malloc(sizeof(u_int8_t)*32); // cree le buffer pour read7
 		for(int i=0; i<32; i++){//copie de rbuf1 dans rbuf 
@@ -95,21 +102,22 @@ void *lire(void *fd){//producteur 1 qui lit dans les fichiers
 }
 
 
-//consommateur 1 et producteur 2 
-void *decrypteur(){//threads de calculs
-	char *bufferInter=(char *) malloc(sizeof(char)*17); //buffer intermediaire utile a la fonction reversehash
+//consommateur 1 et producteur 2 qui decrypte les mdp
+void *decrypteur(){
+	char *bufferInter=(char *) malloc(sizeof(char)*17);//buffer intermediaire utile a la fonction reversehash
 	u_int8_t *mdp;
 	while((debut1!=fin1)||j<=taille_fichier){//tant qu on a pas decrypte tous les elements du fichier
-		printf("%d \n", j);
 		sem_wait(&full1);//attente d un slot rempli
 		pthread_mutex_lock(&mut1); //lock le mut1
+		j++;
+		printf("j = %d\n",j);
 		mdp=buffer1[fin1];//prend la premiere valeur de buf1 apres l espace vide
-		if(fin1==(size1-1)){//si fin1 est a la derniere case
+		if(fin1==(size1-1))//si fin1 est a la derniere case
 			fin1=-1;//revient au debut
-		}
+		
 		fin1++;//sinon fin1 augmente de 1;
 		pthread_mutex_unlock(&mut1); //unlock mut1
-		sem_post(&empty1); //1 slot vide en plus 
+		sem_post(&empty1); //1 slot vide en plus
 		bool trouve=reversehash(mdp, bufferInter, 17);//si reversehash a trouve un inverse il le stocke dans bufferInter 
 		printf("%s\n", bufferInter);
 		sem_wait(&empty2);//attente d'un slot libre (5 max)
@@ -123,7 +131,6 @@ void *decrypteur(){//threads de calculs
 				debut2++;//sinon debut2 augmente de 1;
 			}
 		}
-		j++;
 		pthread_mutex_unlock(&mut2);
 		sem_post(&full2); //1 slot rempli en plus (5 max)
 	}
@@ -141,17 +148,17 @@ void *ecrire(){
 		sem_wait(&full2);
 		pthread_mutex_lock(&mut2);
 		candidat=buffer2[fin2];// verifier que pas de probleme
-		if(fin2==(size2-1)){//si fin2 est a la derniere case
+		if(fin2==(size2-1))//si fin2 est a la derniere case
 			fin2=0;//revient au debut
-		}
-		else{
+		
+		else
 			fin2++;//sinon fin2 augmente de 1;
-		}
+		
 		int test=count(candidat);//on regarde le nombre de voyelles/consonnes en fonction du critere grace a count
 		pthread_mutex_unlock(&mut2);
 		sem_post(&empty2);
 		if(test==max){//si on trouve un autre candidat avec le meme nombre de voyelles/consonnes
-			printf("test==max \n");
+			//printf("test==max \n");
 			char* corr=(char *) malloc (sizeof(strlen(candidat)+1));//variable de correction de bug
 			for(int i=0; i<=strlen(candidat); i++){
 				corr[i]=candidat[i];
@@ -173,7 +180,7 @@ void *ecrire(){
 			pthread_mutex_unlock(&mut3);
 		}
 		else if(test>max){//si on trouve un candidat plus precis encore 
-			printf("test>max \n");
+			//printf("test>max \n");
 			char* corr=(char *) malloc (sizeof(strlen(candidat)+1));//variable de correction de bug
 			for(int i=0; i<=strlen(candidat); i++){
 				corr[i]=candidat[i];
@@ -232,17 +239,19 @@ void *ecrire(){
 int main(int argc, char *argv[]){
 //ouverture du fichier
 int fd=open("test-input/01_4c_1k.bin", O_RDONLY);
-if(fd==-1){ //si erreur
+if(fd==-1) //si erreur
 	perror("open file");
-}
+
 struct stat *recup=(struct stat *)malloc(sizeof(struct stat));
-int test=fstat(fd, recup);
-if(test==-1) //recuperer la taille du fichier
+int test=fstat(fd, recup);//pour recuperer la taille du fichier
+if(test==-1) //si erreur
 	perror("stat");
+
 taille_fichier = recup->st_size;
 taille_fichier=taille_fichier/32; //divise par la taille d'un hash
-free(recup); // a voir normalement ok mais voir au cas ou beug
-//creation des sem
+free(recup);
+
+//creation des semaphores
 	int e1=sem_init(&empty1, 0, 3);//cree semaphore vide qui compte 3 slots vides consommateur 1
 	if(e1==-1){//si erreur
 		perror("create empty1");
@@ -262,19 +271,17 @@ free(recup); // a voir normalement ok mais voir au cas ou beug
 
 //creation des mutex
 	int err=pthread_mutex_init(&mut1, NULL);
-	if (err!=0){ //si erreur quand on initialise mut1 
+	if (err!=0) //si erreur 
 	perror("mutex init"); 
-	}
+	
 	int err2 = pthread_mutex_init(&mut2, NULL);
-	if(err2!=0){//si erreur
+	if(err2!=0)//si erreur
 		perror("init mutex2 decrypt");
-	}
+	
 	int err3 = pthread_mutex_init(&mut3, NULL);
-	if(err3!=0){//si erreur
+	if(err3!=0)//si erreur
 		perror("init mutex3 decrypt");
-	}
-
-
+	
 //gerer les arguments
 	int index;
 	int z;
@@ -315,22 +322,22 @@ free(recup); // a voir normalement ok mais voir au cas ou beug
 //creation des threads
 	int err_threads;
 	pthread_t lire_t;
-	pthread_t decrypter_t;
+	pthread_t decrypter_t[tvalue];
 	pthread_t ecrire_t;
 
-	err_threads=pthread_create(&lire_t, NULL, lire, &fd);//cree le premier thread lire
+	err_threads=pthread_create(&lire_t, NULL, &lire, &fd);//cree le premier thread lire
 	if(err_threads!=0){
 		perror("thread lire");
 	}
 
 	for(int i=0;i<tvalue;i++){
-		err_threads=pthread_create(&decrypter_t, NULL, decrypteur, NULL);//cree le second thread decrypteur
+		err_threads=pthread_create(&(decrypter_t[i]), NULL, &decrypteur, NULL);//cree les seconds threads decrypteur en fonction de l argument donne lors de l excecution
 		if(err_threads!=0){
 			perror("thread decrypteur");
 		}
 	}
 
-	err_threads=pthread_create(&ecrire_t, NULL, ecrire, NULL);//cree le dernier thread ecrire
+	err_threads=pthread_create(&ecrire_t, NULL, &ecrire, NULL);//cree le dernier thread ecrire
 	if(err_threads!=0){
 		perror("thread ecrire");
 	}
@@ -338,11 +345,14 @@ free(recup); // a voir normalement ok mais voir au cas ou beug
 
 	pthread_join(lire_t, NULL);
 	for(int i=0;i<tvalue;i++){
-		pthread_join(decrypter_t, NULL);
+		pthread_join(decrypter_t[i], NULL);
 	}
 	pthread_join(ecrire_t, NULL);
 
-
+//destruction des mutex
+	pthread_mutex_destroy(&mut1);
+	pthread_mutex_destroy(&mut2);
+	pthread_mutex_destroy(&mut3);
 
 	return 0;
 }
