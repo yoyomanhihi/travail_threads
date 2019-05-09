@@ -49,6 +49,15 @@ int cflag=0;
 int tvalue = 1;
 char *ovalue = NULL;
 
+bool check(u_int8_t **buff, int size){
+	bool vide=true;
+	for(int i=0; i<size;i++){
+		if(buff[i]!=0)
+			vide=false;
+	}
+	return vide;
+}
+
 //fonction count qui compte les voyelles ou les consonnes en fonction du critere de selection
 int count(char* mot){ 
 	int len=strlen(mot); //variable qui comporte la taille du mot 
@@ -88,8 +97,9 @@ void *lire(void *tab_fd){
 			buffer1[debut1]=rbuf;//inserer le hash dans le buffer a la premiere case libre
 			if(debut1==(size1-1))//si debut1 est a la derniere case
 				debut1=-1;//revient au debut
-			
+				
 			debut1++;//sinon debut1 augmente de 1;
+			
 			err1 = pthread_mutex_unlock(&mut1);//unlock le mut1
 			if(err1!=0)//si erreur
 				perror("mutex unlock read");
@@ -97,10 +107,7 @@ void *lire(void *tab_fd){
 			sem_post(&full1); 
 		}
 	}
-	printf("je sors de lire\n");
-	printf("stop lire = %d\n", stop);
 	stop--;
-	printf("stop-- = %d\n", stop);
 	free(rbuf1);
 	/*if(close(fd1)==-1)//si erreur lors de la fermeture
 		perror("error close file read");*/	
@@ -115,36 +122,44 @@ void *decrypteur(){
 	while(1){//tant qu on a pas decrypte tous les elements du fichier
 		sem_wait(&full1);//attente d un slot rempli
 		pthread_mutex_lock(&mut1); //lock le mut1
-		
-		mdp=buffer1[fin1];//prend la premiere valeur de buf1 apres l espace vide
-		if(fin1==(size1-1))//si fin1 est a la derniere case
-			fin1=-1;//revient au debut
-		
-		fin1++;//sinon fin1 augmente de 1;
-		pthread_mutex_unlock(&mut1); //unlock mut1
-		sem_post(&empty1); //1 slot vide en plus
+		if(check(buffer1, size1)==false){
+			
+			mdp=buffer1[fin1];//prend la premiere valeur de buf1 apres l espace vide
+			buffer1[fin1]=0;
+			if(fin1==(size1-1))//si fin1 est a la derniere case
+				fin1=-1;//revient au debut
+			
+			fin1++;//sinon fin1 augmente de 1;
+			pthread_mutex_unlock(&mut1); //unlock mut1
+			sem_post(&empty1); //1 slot vide en plus
 
-		bool trouve=reversehash(mdp, bufferInter, 17);//si reversehash a trouve un inverse il le stocke dans bufferInter 
-		printf("%s\n", bufferInter);
+			bool trouve=reversehash(mdp, bufferInter, 17);//si reversehash a trouve un inverse il le stocke dans bufferInter 
+			printf("%s\n", bufferInter);
 
-		sem_wait(&empty2);//attente d'un slot libre (5 max)
-		pthread_mutex_lock(&mut2);
-		if(trouve==true){
-			buffer2[debut2]=bufferInter;//on remet dans le deuxieme buffer le mdp passe dans reversehash qui se trouve dans bufferinter
-			if(debut2==(size2-1)){//si debut2 est a la derniere case
-				debut2=0;//revient au debut
-			}
-			else{
-				debut2++;//sinon debut2 augmente de 1;
+			sem_wait(&empty2);//attente d'un slot libre (5 max)
+			pthread_mutex_lock(&mut2);
+			if(trouve==true){
+				buffer2[debut2]=bufferInter;//on remet dans le deuxieme buffer le mdp passe dans reversehash qui se trouve dans bufferinter
+				if(debut2==(size2-1)){//si debut2 est a la derniere case
+					debut2=0;//revient au debut
+				}
+				else{
+					debut2++;//sinon debut2 augmente de 1;
+				}
 			}
 		}
-
+		else{
+			stop--;	
+			printf("Je ne suis pas passé, stop = %d\n",stop);
+			pthread_mutex_unlock(&mut1);
+			break;
+		}
 		pthread_mutex_unlock(&mut2);
 		sem_post(&full2); //1 slot rempli en plus (5 max)
 		if(stop<=0 && debut1==fin1){
-			printf("je suis dans le if avec 2 conditions \n");
+
 			stop--;
-			printf("dans les 2 conditions stop = %d\n",stop);
+			printf("Je suis passé, stop = %d\n",stop);
 		}
 		if(stop<0){
 			printf("je vais sortir de la boucle decrypteur\n");
@@ -385,3 +400,4 @@ for(int i=optind; i<argc;i++){
 
 	return 0;
 }
+
