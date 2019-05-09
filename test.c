@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <ctype.h>
+#include <getopt.h>
 #include "sha256.h"
 #include "sha256.c"
 #include "reverse.h"
@@ -328,7 +329,8 @@ for(int i=optind; i<argc;i++){
 	if(fd==-1) //si erreur
 		perror("open file");
 	
-	fdt[place]=fd;	
+	fdt[place]=fd;
+	place++;
 }
 
 //creation des semaphores
@@ -400,4 +402,5 @@ for(int i=optind; i<argc;i++){
 
 	return 0;
 }
+
 
