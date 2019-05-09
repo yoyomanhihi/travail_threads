@@ -12,17 +12,17 @@
 #include "sha256.c"
 #include "reverse.h"
 #include "reverse.c"
-uint8_t **buffer1;//taille M+2 avec M qui vaut le nombre de type de fichier (1, 2 ou 3)
+uint8_t **buffer1;//taille M+2 avec M qui vaut le nombre de types de fichier (1, 2 ou 3)
 char* buffer2[5];//taille N+2 avec N le nombre de threads
-int size1=3;//taille de buffer1, sert plus tard
-int size2=5;//taille de buffer2, sert plus tard
-int debut1;//debut du buffer1 a partir de quoi le buffer est vide
-int fin1;//fin de la zone vide de buffer1
+int size1=3;//taille de buffer1
+int size2=5;//taille de buffer2
+int debut1;//place a partir de laquelle le thread peut inserer dans buffer1 un element
+int fin1;//place a partir de laquelle le thread peut prendre quelque chose de buffer1
 int debut2=0;//idem que debut1 mais pour buffer2
 int fin2=0;//idem que fin1 mais pour buffer2
-int nb_fichiers;
-int stop=1;
-int stop2= 1;
+int nb_fichiers;//correspond au nombre de fichiers donnes en argument lors de l execution
+int lu=1;//sert comme condition d arret de decryteur
+int decrypte=1;//sert comme condition d arret de ecrire
 
 //creation des semaphores 
 sem_t empty1; 
@@ -46,20 +46,21 @@ typedef struct list{//represente la liste qui sert a stocker les candidats dans 
 } list_t;
 
 //variables utiles pour getopt
-int cflag=0;
-int tvalue = 1;
-char *ovalue = NULL;
+int cflag=0; //variable stockant le critere de selection
+int tvalue = 1;//variable stockant le nombre de threads de calcul
+char *ovalue = NULL;//variable qui stocke le nom du fichier output
 
+//fonction qui regarde si le buffer est vide
 bool check(u_int8_t **buff, int size){
-	bool vide=true;
+	bool vide=true;//de base il considere que le buffer est vide
 	for(int i=0; i<size;i++){
-		if(buff[i]!=0)
+		if(buff[i]!=0)//si le buffer n est pas vide 
 			vide=false;
 	}
 	return vide;
 }
 
-//fonction count qui compte les voyelles ou les consonnes en fonction du critere de selection
+//fonction qui compte les voyelles ou les consonnes en fonction du critere de selection
 int count(char* mot){ 
 	int len=strlen(mot); //variable qui comporte la taille du mot 
 	int count=0; //nombre de voyelle ou consonne
@@ -84,7 +85,7 @@ void *lire(void *tab_fd){
 	buffer1=(uint8_t **) malloc(3*sizeof(uint8_t *));
 	debut1=0;
 	u_int8_t *rbuf1 = (u_int8_t *)malloc(sizeof(u_int8_t)*32); //cree le buffer pour read
-	for(int i=0; i<nb_fichiers; i++){
+	for(int i=0; i<nb_fichiers; i++){//parcourt la tableau contenant tous les fd
 		while(read(fd1[i], rbuf1, sizeof(u_int8_t)*32)>0){//Tant qu'il y a a lire
 			u_int8_t *rbuf = (u_int8_t *)malloc(sizeof(u_int8_t)*32); // cree le buffer pour read
 			for(int i=0; i<32; i++)//copie de rbuf1 dans rbuf 
@@ -107,14 +108,12 @@ void *lire(void *tab_fd){
 			
 			sem_post(&full1); 
 		}
-		if(close(fd1[i])==-1){
-		perror("error close file write");
-		}
+		if(close(fd1[i])==-1)//ferme le fichier qui a ete lu
+			perror("error close file write");
+		
 	}
-	stop--;
-	free(rbuf1);
-	/*if(close(fd1)==-1)//si erreur lors de la fermeture
-		perror("error close file read");*/	
+	lu--;//si tous les fichiers ont ete lus, lu diminue jusque 0
+	free(rbuf1);	
 	pthread_exit(NULL);	
 }
 
@@ -126,7 +125,7 @@ void *decrypteur(){
 	while(1){//tant qu on a pas decrypte tous les elements du fichier
 		sem_wait(&full1);//attente d un slot rempli
 		pthread_mutex_lock(&mut1); //lock le mut1
-		if(check(buffer1, size1)==false){
+		if(check(buffer1, size1)==false){//si le buffer n est pas vide, le thread passe pour faire reversehash
 			
 			mdp=buffer1[fin1];//prend la premiere valeur de buf1 apres l espace vide
 			buffer1[fin1]=0;
@@ -142,7 +141,7 @@ void *decrypteur(){
 			sem_wait(&empty2);//attente d'un slot libre (5 max)
 			pthread_mutex_lock(&mut2);
 			if(trouve==true){
-				buffer2[debut2]=bufferInter;//on remet dans le deuxieme buffer le mdp passe dans reversehash qui se trouve dans bufferinter
+				buffer2[debut2]=bufferInter;//insertion dans buffer2 du mdp qui se trouve dans bufferinter
 				if(debut2==(size2-1)){//si debut2 est a la derniere case
 					debut2=0;//revient au debut
 				}
@@ -151,28 +150,26 @@ void *decrypteur(){
 				}
 			}
 		}
-		else{
-			stop--;	
-			printf("Je ne suis pas passé, stop = %d\n",stop);
+		else{//si le buffer est vide, il ne reversehash pas 
+			lu--;//lu diminue
+			printf("Je ne suis pas passé, lu = %d\n",lu);
 			pthread_mutex_unlock(&mut1);
 			free(bufferInter);
-			break;
+			break;//le thread n est donc plus utile car le buffer est vide et donc sort de la boucle et s arrete
 		}
 		pthread_mutex_unlock(&mut2);
 		sem_post(&full2); //1 slot rempli en plus (5 max)
-		if(stop<=0 && debut1==fin1){
-			stop--;
-			printf("Je suis passé, stop = %d\n",stop);
+		if(lu<=0 && debut1==fin1){//si lire est fini et que le buffer est vide
+			lu--;
+			printf("Je suis passé, stop = %d\n",lu);
 		}
-		if(stop<0){
-			printf("je vais sortir de la boucle decrypteur\n");
+		if(lu<0){
 			free(bufferInter);
-			break;
+			break;//le thread sort et a fini son travail
 		}
 	}
-	printf("fin decrypteur \n");
-	if(stop==(-tvalue)){
-		stop2=-1;
+	if(lu==(-tvalue)){//si tous les threads de calcul sont sortis 
+		decrypte=-1;
 		sem_post(&full2);
 	}
 	sem_post(&full1);
@@ -185,16 +182,15 @@ void *ecrire(){
 	list_t *list=(list_t *) malloc(sizeof(list_t));
 	int max=-1;//maximum de voyelles ou consonnes lues
 	char* candidat=NULL;//variabe servant a stocker la valeur lue dans buffer2 initialisee a null au depart
-	while(1){//tant que k n'a pas atteint la taille du fichier ou que debut2 est different de fin2
+	while(1){//tant qu on a pastout ecrit et que decrypte n est pas egal a -1
 		sem_wait(&full2);
-		if(stop2==-1)
+		if(decrypte==-1)
 			break;
-		pthread_mutex_lock(&mut2);
 
-		candidat=buffer2[fin2];// verifier que pas de probleme
+		pthread_mutex_lock(&mut2);
+		candidat=buffer2[fin2];
 		if(fin2==(size2-1))//si fin2 est a la derniere case
 			fin2=0;//revient au debut
-		
 		else
 			fin2++;//sinon fin2 augmente de 1;
 		
@@ -212,14 +208,14 @@ void *ecrire(){
 				perror("node creation");
 			
 			node_t *run=list->first;//noeud runner pour parcourir la liste
-			int doublons=-1;
+			int doublons=-1;//gestion des mdp en double
 			while(run->next!=NULL){
-				if(strcmp(run->candid, corr)==0)//gestion des doublons, si le candidat existe deja, on initialise doublons a 0
+				if(strcmp(run->candid, corr)==0)//si le candidat existe deja, on initialise doublons a 0
 					doublons=0;
 				
-				run=run->next;
+				run=run->next;//le runner passe au noeud suivant
 			}
-			if(doublons!=0){//si le candidat n'existe pas on l ajoute a la liste
+			if(doublons!=0){//si le candidat n existe pas on l ajoute a la liste
 				run->next=n;
 				n->next=NULL;
 				n->candid=corr;
@@ -227,16 +223,16 @@ void *ecrire(){
 			}
 			pthread_mutex_unlock(&mut3);
 		}
-		else if(test>max){//si on trouve un candidat plus precis encore 
+		else if(test>max){//si on trouve un candidat avec plus de consonnes/voyelles
 			char* corr=(char *) malloc (sizeof(strlen(candidat)+1));//variable de correction de bug
-			for(int i=0; i<=strlen(candidat); i++){
+			for(int i=0; i<=strlen(candidat); i++)
 				corr[i]=candidat[i];
-			}
+			
 			pthread_mutex_lock(&mut3);
 			node_t *n=(node_t *) malloc(sizeof(node_t));//creation d un noeud
-			if(n==NULL){
+			if(n==NULL)
 				perror("node creation");
-			}
+			
 			n->candid=corr;
 			list->first=n;
 			n->next=NULL;
@@ -244,16 +240,10 @@ void *ecrire(){
 			max=test;//max devient test 
 			pthread_mutex_unlock(&mut3);
 		}
-		/*else{
-			pthread_mutex_lock(&mut3);
-			k--;
-			pthread_mutex_unlock(&mut3);
-		}*/
 	}
-	printf("je suis sorti de la boucle ecrire \n");
 	node_t *n=list->first;//noeud runner pour parcourir la liste
 	int count=0;
-	if(ovalue==NULL){
+	if(ovalue==NULL){//si on ne precise pas ou ecrire les candidats dans un fichier de sortie on imprime sur la sortie standard
 		while(n!=NULL){//parcourt la liste 
 			count++;
 			printf("Candidat : %s \n", n->candid);
@@ -263,21 +253,20 @@ void *ecrire(){
 	}
 	else{
 		int fd2=open(ovalue, O_WRONLY|O_TRUNC|O_CREAT);//ouverture du fichier ou les candidats seront ecrits
-		if(fd2==-1){
+		if(fd2==-1)//si erreur
 			perror("error open File write");
-		}
+		
 		while(n!=NULL){//parcourt la liste 
-			char *wbuff1=n->candid;
-			int b=write(fd2, wbuff1, sizeof(char)*(strlen(n->candid)));
-			count++;
-			if(b==-1){
+			char *wbuff1=n->candid;//le buffer prend le mot de passe candidat
+			int b=write(fd2, wbuff1, sizeof(char)*(strlen(n->candid)));//le candidat est ecrit dans le fichier
+			if(b==-1)//si erreur
 				perror("write error");
-			}
-			n=n->next;
+
+			count++;
+			n=n->next;//noeud suivant
 		}
-		if(close(fd2)==-1){
-		perror("error close file write");
-		}
+		if(close(fd2)==-1)
+			perror("error close file write");	
 	}
 	free(buffer1);
 	free(list);
@@ -285,23 +274,25 @@ void *ecrire(){
 	pthread_exit(NULL);	
 }
 
+//fonction main
 int main(int argc, char *argv[]){
+
 //gerer les arguments
 int z;
 opterr=0;
 
 while((z=getopt (argc, argv, "co:t:"))!=-1){
 	switch(z){
-		case 'c':
+		case 'c'://si on met l argument -c pour executer cracker
 			cflag=1;
 			break;
-		case 't':
+		case 't'://si on met l argument -t suivi d un chiffre pour executer cracker
 			tvalue=atoi(optarg);
 			break;
-		case 'o':
+		case 'o'://si on met l argument -o suivant d un nom de fichier pour executer cracker
 			ovalue=optarg;
 			break;
-		case '?':
+		case '?'://si erreur
 			if(optopt=='t'){
 				fprintf(stderr, "Option -t requires an argument.\n");
 			}
@@ -316,17 +307,17 @@ while((z=getopt (argc, argv, "co:t:"))!=-1){
 }
 printf("cflag=%d, tvalue=%d, ovalue=%s\n", cflag, tvalue, ovalue);
 
-nb_fichiers = argc-optind;
-int fdt[nb_fichiers];
-int place=0;//place dans le tableau fd
+nb_fichiers = argc-optind;//le nombre de fichiers
+int fd_tab[nb_fichiers];//tableau avec autant de case que de fichiers donnes en argument lors de l execution
+int place=0;//place dans le tableau fd_tab
 
 //ouverture du/des fichiers
-for(int i=optind; i<argc;i++){
+for(int i=optind; i<argc;i++){//boucle for pour placer tous les fd dans le tableau fd_tab
 	int fd=open(argv[i], O_RDONLY);
 	if(fd==-1) //si erreur
 		perror("open file");
 	
-	fdt[place]=fd;
+	fd_tab[place]=fd;
 	place++;
 }
 
@@ -368,28 +359,27 @@ for(int i=optind; i<argc;i++){
 	pthread_t decrypter_t[tvalue];
 	pthread_t ecrire_t;
 
-	err_threads=pthread_create(&lire_t, NULL, &lire, (void *)fdt);//cree le premier thread lire
+	err_threads=pthread_create(&lire_t, NULL, &lire, (void *)fd_tab);//cree le premier thread lire qui prend en argument le tableau de fd
 	if(err_threads!=0){
 		perror("thread lire");
 	}
 
 	for(int i=0;i<tvalue;i++){
 		err_threads=pthread_create(&(decrypter_t[i]), NULL, &decrypteur, NULL);//cree les seconds threads decrypteur en fonction de l argument -t donne lors de l excecution
-		if(err_threads!=0){
+		if(err_threads!=0)
 			perror("thread decrypteur");
-		}
 	}
 
 	err_threads=pthread_create(&ecrire_t, NULL, &ecrire, NULL);//cree le dernier thread ecrire
-	if(err_threads!=0){
+	if(err_threads!=0)
 		perror("thread ecrire");
-	}
+	
 
 
 	pthread_join(lire_t, NULL);
-	for(int i=0;i<tvalue;i++){
+	for(int i=0;i<tvalue;i++)
 		pthread_join(decrypter_t[i], NULL);
-	}
+	
 	pthread_join(ecrire_t, NULL);
 
 //destruction des mutex
