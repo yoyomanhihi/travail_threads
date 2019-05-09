@@ -107,6 +107,9 @@ void *lire(void *tab_fd){
 			
 			sem_post(&full1); 
 		}
+		if(close(fd1[i])==-1){
+		perror("error close file write");
+		}
 	}
 	stop--;
 	free(rbuf1);
@@ -136,7 +139,6 @@ void *decrypteur(){
 
 			bool trouve=reversehash(mdp, bufferInter, 17);//si reversehash a trouve un inverse il le stocke dans bufferInter 
 			printf("%s\n", bufferInter);
-
 			sem_wait(&empty2);//attente d'un slot libre (5 max)
 			pthread_mutex_lock(&mut2);
 			if(trouve==true){
@@ -153,17 +155,18 @@ void *decrypteur(){
 			stop--;	
 			printf("Je ne suis pas passé, stop = %d\n",stop);
 			pthread_mutex_unlock(&mut1);
+			free(bufferInter);
 			break;
 		}
 		pthread_mutex_unlock(&mut2);
 		sem_post(&full2); //1 slot rempli en plus (5 max)
 		if(stop<=0 && debut1==fin1){
-
 			stop--;
 			printf("Je suis passé, stop = %d\n",stop);
 		}
 		if(stop<0){
 			printf("je vais sortir de la boucle decrypteur\n");
+			free(bufferInter);
 			break;
 		}
 	}
@@ -173,6 +176,7 @@ void *decrypteur(){
 		sem_post(&full2);
 	}
 	sem_post(&full1);
+	free(bufferInter);
 	pthread_exit(NULL);		
 }
 
@@ -253,6 +257,7 @@ void *ecrire(){
 		while(n!=NULL){//parcourt la liste 
 			count++;
 			printf("Candidat : %s \n", n->candid);
+			free(n->candid);
 			n=n->next;
 		}
 	}
@@ -274,6 +279,8 @@ void *ecrire(){
 		perror("error close file write");
 		}
 	}
+	free(buffer1);
+	free(list);
 	printf("Le nombre de candidats est de %d\n", count);
 	pthread_exit(NULL);	
 }
@@ -306,16 +313,6 @@ while((z=getopt (argc, argv, "co:t:"))!=-1){
 			}
 			return 1;
 	}
-	/*for(index=optind; index<argc; index++){
-		printf ("Non-option argument %s\n", argv[index]);
-		int fd=open(argv[index], O_RDONLY);
-		tab[i]=fd;
-		i++;
-	}
-
-	for(int i=0; tab[i]!=0; i++){
-		printf("%dppp", tab[i]);
-	}*/
 }
 printf("cflag=%d, tvalue=%d, ovalue=%s\n", cflag, tvalue, ovalue);
 
