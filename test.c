@@ -108,9 +108,6 @@ void *lire(void *tab_fd){
 			
 			sem_post(&full1); 
 		}
-		if(close(fd1[i])==-1)//ferme le fichier qui a ete lu
-			perror("error close file write");
-		
 	}
 	lu--;//si tous les fichiers ont ete lus, lu diminue jusque 0
 	free(rbuf1);	
@@ -154,7 +151,6 @@ void *decrypteur(){
 			lu--;//lu diminue
 			printf("Je ne suis pas passé, lu = %d\n",lu);
 			pthread_mutex_unlock(&mut1);
-			free(bufferInter);
 			break;//le thread n est donc plus utile car le buffer est vide et donc sort de la boucle et s arrete
 		}
 		pthread_mutex_unlock(&mut2);
@@ -164,7 +160,6 @@ void *decrypteur(){
 			printf("Je suis passé, stop = %d\n",lu);
 		}
 		if(lu<0){
-			free(bufferInter);
 			break;//le thread sort et a fini son travail
 		}
 	}
@@ -173,7 +168,6 @@ void *decrypteur(){
 		sem_post(&full2);
 	}
 	sem_post(&full1);
-	free(bufferInter);
 	pthread_exit(NULL);		
 }
 
@@ -247,7 +241,6 @@ void *ecrire(){
 		while(n!=NULL){//parcourt la liste 
 			count++;
 			printf("Candidat : %s \n", n->candid);
-			free(n->candid);
 			n=n->next;
 		}
 	}
@@ -268,8 +261,6 @@ void *ecrire(){
 		if(close(fd2)==-1)
 			perror("error close file write");	
 	}
-	free(buffer1);
-	free(list);
 	printf("Le nombre de candidats est de %d\n", count);
 	pthread_exit(NULL);	
 }
@@ -389,5 +380,6 @@ for(int i=optind; i<argc;i++){//boucle for pour placer tous les fd dans le table
 
 	return 0;
 }
+
 
 
