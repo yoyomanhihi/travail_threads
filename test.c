@@ -204,9 +204,10 @@ void *ecrire(){
 			node_t *run=list->first;//noeud runner pour parcourir la liste
 			int doublons=-1;//gestion des mdp en double
 			while(run->next!=NULL){
-				if(strcmp(run->candid, corr)==0)//si le candidat existe deja, on initialise doublons a 0
+				if(strcmp(run->candid, corr)==0){//si le candidat existe deja, on initialise doublons a 0
 					doublons=0;
-				
+					printf("C EST UN DOUBLON");
+				}
 				run=run->next;//le runner passe au noeud suivant
 			}
 			if(doublons!=0){//si le candidat n existe pas on l ajoute a la liste

@@ -23,11 +23,12 @@ bool check(u_int8_t **buff, int size){
 }
 
 int main(int argc, char *argv[]){
-	bool vide;
-	uint8_t *byte=(uint8_t *) 4;
+	bool vide=false;
+	uint8_t byte[32];
+	byte[0]=(uint8_t) 4;
 	uint8_t *tabvide[6];
 	uint8_t *tabrempli[9];
-	tabrempli[7]=byte;
+	tabrempli[0]=byte;
 	vide=check(tabvide, 6);
 	printf("tableau vide: %d \n", vide);
 	vide=check(tabrempli, 9);
