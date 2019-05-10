@@ -6,9 +6,10 @@ tests: cracker
 	./count.o cisted
 	./count.o -c cisted
 	./check.o
+	./cracker -t 4 -c tests/02_6c_5.bin
 	./cracker -t 8 tests/01_4c_1k.bin -o tests/File.txt
-	./cracker -t 6 tests/02_6c_5.bin
-	./cracker -t 3 tests/01_4c_1k.bin tests/02_6c_5.bin
+	./cracker -t 9 tests/02_6c_5.bin
+	./cracker -t 3 tests/01_4c_1k.bin tests/02_6c_5.bin -o tests/File2.txt
 	./cracker -t 950 tests/01_4c_1k.bin tests/02_6c_5.bin
 all:
 	gcc -Wall -o cracker src/test.c -lpthread -Werror -std=c99
