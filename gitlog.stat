@@ -1,0 +1,666 @@
+commit e78120926ab9aeb63a135ec37ee2c96d0b4fcb1e
+Author: Justine Pironnet <jpironnet@hoth.info.ucl.ac.be>
+Date:   Fri May 10 13:39:20 2019 +0200
+
+    suppression fichiers inutiles
+
+ 01_4c_1k.bin            |  Bin 32000 -> 0 bytes
+ 01_4c_1k.txt            | 1000 -----------------------------------------------
+ 02_6c_5.bin             |    5 -
+ 02_6c_5.txt             |    5 -
+ File                    |    0
+ File.c                  |  111 ------
+ File.txt                |    0
+ Makefile                |   28 +-
+ check                   |  Bin 29920 -> 0 bytes
+ check.c                 |   36 --
+ count                   |  Bin 30080 -> 0 bytes
+ count.c                 |   47 ---
+ lire.c                  |   87 -----
+ reverse.c               |   50 ---
+ reverse.h               |   18 -
+ sha256.c                |  563 --------------------------
+ sha256.h                |   91 -----
+ test-input/01_4c_1k.bin |  Bin 32000 -> 0 bytes
+ test-input/01_4c_1k.txt | 1000 -----------------------------------------------
+ test-input/02_6c_5.bin  |    5 -
+ test-input/02_6c_5.txt  |    5 -
+ test.c                  |  386 ------------------
+ testfile                |  Bin 40064 -> 0 bytes
+ 23 files changed, 14 insertions(+), 3423 deletions(-)
+
+commit ebebc53c5aba734be6857b79e2001486fe8418d5
+Author: Justine Pironnet <jpironnet@hoth.info.ucl.ac.be>
+Date:   Fri May 10 13:26:39 2019 +0200
+
+    Format ok
+    /bin/bash: indent: command not found
+
+ rapport.pdf                 |  Bin 0 -> 371853 bytes
+ src/reverse.c               |   50 +++
+ src/reverse.h               |   18 +
+ src/sha256.c                |  563 ++++++++++++++++++++++++
+ src/sha256.h                |   91 ++++
+ src/test-input/01_4c_1k.bin |  Bin 0 -> 32000 bytes
+ src/test-input/01_4c_1k.txt | 1000 +++++++++++++++++++++++++++++++++++++++++++
+ src/test-input/02_6c_5.bin  |    5 +
+ src/test-input/02_6c_5.txt  |    5 +
+ src/test.c                  |  389 +++++++++++++++++
+ tests/01_4c_1k.bin          |  Bin 0 -> 32000 bytes
+ tests/01_4c_1k.txt          | 1000 +++++++++++++++++++++++++++++++++++++++++++
+ tests/02_6c_5.bin           |    5 +
+ tests/02_6c_5.txt           |    5 +
+ tests/File.txt              |    0
+ tests/check.c               |   34 ++
+ tests/count.c               |   44 ++
+ 17 files changed, 3209 insertions(+)
+
+commit 4143536189a3b916cdb3520606c251fd6c2e6525
+Author: Justine Pironnet <jpironnet@hoth.info.ucl.ac.be>
+Date:   Fri May 10 12:20:07 2019 +0200
+
+    Pour push
+
+ Makefile | 19 ++++++++++++++-----
+ check.c  |  7 ++++---
+ test.c   |  5 +++--
+ 3 files changed, 21 insertions(+), 10 deletions(-)
+
+commit fd7d474a85b83898301095e7dd81f8e00e87a7eb
+Merge: f5c3340 d286ad5
+Author: Justine Pironnet <jpironnet@hoth.info.ucl.ac.be>
+Date:   Fri May 10 12:17:19 2019 +0200
+
+    Merge branch 'master' of https://github.com/yoyomanhihi/travail_threads
+    
+    Conflicts:
+    	cracker
+
+commit f5c334070e5eb35900960b6be3fdd1d3a850ffb3
+Author: Justine Pironnet <jpironnet@hoth.info.ucl.ac.be>
+Date:   Fri May 10 11:15:24 2019 +0200
+
+    commit pour pull
+
+ cracker | Bin 40088 -> 36328 bytes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+
+commit d286ad5c3002c239a8c39d03b627524ea4386ec1
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Fri May 10 11:10:02 2019 +0200
+
+    Ajout de tests
+
+ Makefile |   9 ++++++++-
+ check    | Bin 0 -> 29920 bytes
+ check.c  |  35 +++++++++++++++++++++++++++++++++++
+ count    | Bin 0 -> 30080 bytes
+ count.c  |  47 +++++++++++++++++++++++++++++++++++++++++++++++
+ cracker  | Bin 40088 -> 30080 bytes
+ 6 files changed, 90 insertions(+), 1 deletion(-)
+
+commit d7a32807f03f6f2d227f399586223acfd2208a24
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Fri May 10 09:49:53 2019 +0200
+
+    Makefile a jour
+
+ Makefile | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+commit 0002a960587c9f271e08a80217cc9eea5d2228af
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Thu May 9 23:47:09 2019 +0200
+
+    Suppression temporaire de free et close
+
+ cracker | Bin 40088 -> 40088 bytes
+ test.c  |  10 +---------
+ 2 files changed, 1 insertion(+), 9 deletions(-)
+
+commit e72412a0fb373a6ac7425b61684af037124f4da7
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Thu May 9 23:17:47 2019 +0200
+
+    changements mineurs
+
+ test.c | 160 +++++++++++++++++++++++++++++++----------------------------------
+ 1 file changed, 75 insertions(+), 85 deletions(-)
+
+commit 507c34ef91a7849d141b9a4dc615b61d411141cc
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Thu May 9 22:33:55 2019 +0200
+
+    Free+close
+
+ cracker | Bin 40088 -> 40088 bytes
+ test.c  |  21 +++++++++------------
+ 2 files changed, 9 insertions(+), 12 deletions(-)
+
+commit 1f233fe1686393209bd8dddd4fee9c71e41f6164
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Thu May 9 20:27:52 2019 +0200
+
+    Code marche et Makefile
+
+ -testfile.o  |  Bin 39992 -> 0 bytes
+ 01_4c_1k.bin |  Bin 0 -> 32000 bytes
+ 01_4c_1k.txt | 1000 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 02_6c_5.bin  |    5 +
+ 02_6c_5.txt  |    5 +
+ Makefile     |    9 +
+ cracker      |  Bin 40088 -> 40088 bytes
+ test.c       |    5 +-
+ 8 files changed, 1023 insertions(+), 1 deletion(-)
+
+commit 7f3af7bc5f5f9b912c8457a916fbfb02634dd433
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Thu May 9 19:29:11 2019 +0200
+
+    test
+
+ cracker | Bin 40160 -> 40088 bytes
+ test.c  |  68 +++++++++++++++++++++++++++++++++++++++-------------------------
+ 2 files changed, 42 insertions(+), 26 deletions(-)
+
+commit 5b96062bf5bbffc24963fa3837350f688e1a256c
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Thu May 9 10:39:48 2019 +0200
+
+    multi fichier +multi thread fin
+
+ test.c   | 214 +++++++++++++++++++++++++++++++++------------------------------
+ testfile | Bin 40160 -> 40064 bytes
+ 2 files changed, 112 insertions(+), 102 deletions(-)
+
+commit 3f5c235eca727f536f44828e924343f0af86d699
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Wed May 8 20:12:03 2019 +0200
+
+    Pourquoi ca compile pas ?
+
+ cracker | Bin 40120 -> 40160 bytes
+ test.c  |  61 ++++++++++++++++++++++++++++++++-----------------------------
+ 2 files changed, 32 insertions(+), 29 deletions(-)
+
+commit 3b360bf9d1e81842fb95ae51e4c7e5f76c7a5059
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Wed May 8 15:12:36 2019 +0200
+
+    gestion des doublons
+
+ test.c   |  15 +++++++++++----
+ testfile | Bin 40088 -> 40160 bytes
+ 2 files changed, 11 insertions(+), 4 deletions(-)
+
+commit 4938f89ab2ae1976e5c0c22052494878ab430b37
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Wed May 8 14:02:20 2019 +0200
+
+    Debut de gestion de fichiers input
+
+ cracker | Bin 40032 -> 40120 bytes
+ test.c  |   9 +++++++++
+ 2 files changed, 9 insertions(+)
+
+commit 6a18b7a46535abb6f51d8622506f73ff56fd5650
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Wed May 8 11:50:01 2019 +0200
+
+    fin correction multi threads + commentaire
+
+ test.c   | 102 +++++++++++++++++++++++++++++++++++----------------------------
+ testfile | Bin 40000 -> 40088 bytes
+ 2 files changed, 56 insertions(+), 46 deletions(-)
+
+commit e15bd75bddb63331070be58d1986706f8e163cf0
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Wed May 8 10:37:25 2019 +0200
+
+    Correction multi threads + -o
+
+ File.txt |   1 -
+ cracker  | Bin 39992 -> 40032 bytes
+ test.c   |  18 +++++++++---------
+ 3 files changed, 9 insertions(+), 10 deletions(-)
+
+commit 096af64d6ff910c3a6632a03c26d6b858375cab0
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Tue May 7 19:54:48 2019 +0200
+
+    Mise a jour
+
+ -testfile.o | Bin 40000 -> 39992 bytes
+ cracker     | Bin 39992 -> 39992 bytes
+ test.c      |  10 ++++++----
+ 3 files changed, 6 insertions(+), 4 deletions(-)
+
+commit 26b3cd846163cb11d2b989564b5ee438c055d7ad
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Tue May 7 18:01:04 2019 +0200
+
+    Mise a jour
+
+ cracker | Bin 39992 -> 39992 bytes
+ test.c  |   4 +++-
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+
+commit 3189f842aac71cf72e7b8fb7e28dbd0f140ffa73
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Tue May 7 17:44:36 2019 +0200
+
+    Ajout de l'option -t et debut de -o
+
+ -testfile.o | Bin 40000 -> 40000 bytes
+ File.txt    |   5 +---
+ cracker     | Bin 0 -> 39992 bytes
+ test.c      |  86 +++++++++++++++++++++---------------------------------------
+ 4 files changed, 31 insertions(+), 60 deletions(-)
+
+commit 5749345407e3736b2f6f74dd49fc9932c081e9c5
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Tue May 7 16:40:53 2019 +0200
+
+    Auto stash before merge of "master" and "origin/master"
+
+ -testfile.o | Bin 40000 -> 40000 bytes
+ File.txt    |   5 +++-
+ test.c      |  89 ++++++++++++++++++++++++++++++++++++++++--------------------
+ 3 files changed, 64 insertions(+), 30 deletions(-)
+
+commit 15b0c98dbe270adbbab9e99b2b333d4497575c19
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Tue May 7 15:20:27 2019 +0200
+
+    Fonctions de base OK sauf pb chinois
+
+ File.txt |   2 +-
+ test.c   |  44 ++++++++++++++++++++++++--------------------
+ testfile | Bin 40000 -> 40000 bytes
+ 3 files changed, 25 insertions(+), 21 deletions(-)
+
+commit 976808ad7fdd2d789df706d26dbf7954a9433cdf
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Tue May 7 11:56:24 2019 +0200
+
+    print tout et sort de la boucle mais chinois!!
+
+ test.c   |  27 ++++++++++++++++-----------
+ testfile | Bin 39912 -> 40000 bytes
+ 2 files changed, 16 insertions(+), 11 deletions(-)
+
+commit d6cdd995469b0117fd3c701f1c2140a170c30ac6
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Tue May 7 09:16:33 2019 +0200
+
+    Correction bug write+getopt
+
+ -testfile.o | Bin 35792 -> 40000 bytes
+ File.txt    |   2 +-
+ test.c      |  50 +++++++++++++++++++++++++++++++-------------------
+ 3 files changed, 32 insertions(+), 20 deletions(-)
+
+commit 4c8aaca6001ad7d5aac90836a278b598bea2423c
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Tue May 7 00:48:52 2019 +0200
+
+    Mise a jour
+
+ -testfile.o | Bin 39912 -> 35792 bytes
+ test.c      |  64 +++++++++++++++++++++++++++++++-----------------------------
+ 2 files changed, 33 insertions(+), 31 deletions(-)
+
+commit 9a4e2426afda7d796c982edb1751d6c993f4b12f
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Mon May 6 22:07:43 2019 +0200
+
+    ECRIRE TEST MODIF
+
+ File.txt |   2 +-
+ test.c   |  33 +++++++++++++++++++++------------
+ testfile | Bin 35768 -> 39912 bytes
+ 3 files changed, 22 insertions(+), 13 deletions(-)
+
+commit d635cf28bd3dc4d264b056e5600ff1e0f9d360f7
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Mon May 6 18:10:36 2019 +0200
+
+    Correction partielle de ecrire
+
+ -testfile.o | Bin 35696 -> 39912 bytes
+ File.txt    | Bin 7 -> 5 bytes
+ test.c      |  18 +++++++++++++-----
+ 3 files changed, 13 insertions(+), 5 deletions(-)
+
+commit 4edcc64dfabdbd2e83288a9fe0174075baf9a0e8
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Mon May 6 16:59:15 2019 +0200
+
+    qq modif
+
+ test.c   |  41 +++++++++++++++++++----------------------
+ testfile | Bin 35768 -> 35768 bytes
+ 2 files changed, 19 insertions(+), 22 deletions(-)
+
+commit e19c611c286c50c7408e66f21c23cb21e42d3e00
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Mon May 6 16:41:03 2019 +0200
+
+    Main, lire et decrypter fin/modifie
+    
+    tout print
+
+ -testfile | Bin 30288 -> 0 bytes
+ File.txt  | Bin 0 -> 7 bytes
+ test.c    |  40 +++++++++++++++++++++++++++-------------
+ testfile  | Bin 0 -> 35768 bytes
+ 4 files changed, 27 insertions(+), 13 deletions(-)
+
+commit ecc03d94e77db62c080dfd9395393920c281e291
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Mon May 6 15:08:32 2019 +0200
+
+    getopt en place
+
+ -testfile.o | Bin 35288 -> 35696 bytes
+ test.c      |  48 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 48 insertions(+)
+
+commit b1dadc3b49b4aee0e792c99da5b0e05210ebe84c
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Sun May 5 17:00:30 2019 +0200
+
+    ecrire le plus a jour
+
+ -testfile.o | Bin 35288 -> 35288 bytes
+ test.c      |   4 ++++
+ 2 files changed, 4 insertions(+)
+
+commit 13718ff49fc53dd7cdcf27106027e5ada9d95ccb
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Sun May 5 15:54:05 2019 +0200
+
+    decrypteur fonctionnel
+    
+    correction du bug qui nous rend fou depuis 2 jours
+
+ -testfile.o | Bin 35288 -> 35288 bytes
+ File        | Bin 35248 -> 0 bytes
+ test.c      |  23 ++++++++++++-----------
+ testfile    | Bin 35392 -> 0 bytes
+ 4 files changed, 12 insertions(+), 11 deletions(-)
+
+commit 5685a58e4811cfbd34701045c7fc4c989d41a4e4
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Sun May 5 11:10:23 2019 +0200
+
+    Liste chainee ecrire
+    
+    Changement dans ecrire, on stocke les candidats dans une liste chainee et on imprime tout à la fin
+
+ -testfile.o | Bin 35288 -> 35288 bytes
+ File        | Bin 20 -> 35248 bytes
+ File.txt    | Bin 15 -> 0 bytes
+ test.c      |  57 ++++++++++++++++++++++++++++++++++++++-------------------
+ 4 files changed, 38 insertions(+), 19 deletions(-)
+
+commit 08fc446ed5d03ccf5d6f04b986bcdcfde9866163
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Sat May 4 19:14:51 2019 +0200
+
+    test.c ne s arrete plus
+
+ -testfile.o | Bin 35408 -> 35288 bytes
+ File        | Bin 0 -> 20 bytes
+ File.txt    | Bin 0 -> 15 bytes
+ lire.c      |   4 ----
+ test.c      |  23 +++++++++--------------
+ 5 files changed, 9 insertions(+), 18 deletions(-)
+
+commit dfe07e5f93ddacd5e1b680b63cc086018d4a5126
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Sat May 4 15:37:00 2019 +0200
+
+    Changements mineurs
+
+ -testfile.o | Bin 30288 -> 35408 bytes
+ test.c      |  96 +++++++++++++++++++++++++++++-------------------------------
+ 2 files changed, 46 insertions(+), 50 deletions(-)
+
+commit 40dfc1762d4ab7c39be18bce93e4bf46eb8a6823
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Sat May 4 13:58:00 2019 +0200
+
+    essai de debug
+
+ test.c | 38 +++++++++++++++++++++-----------------
+ 1 file changed, 21 insertions(+), 17 deletions(-)
+
+commit 994018318c13fc514c54f1549285394ebd4b327d
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Sat May 4 00:08:50 2019 +0200
+
+    Ajout thread lire+decrypter + qq modif
+    
+    les threads fonctionnent jusque ecrire (print candidat ne print rien)
+
+ -testfile   | Bin 30072 -> 30288 bytes
+ -testfile.o | Bin 30072 -> 30288 bytes
+ File        | Bin 35344 -> 0 bytes
+ test.c      |  46 +++++++++++++++++++++++++++-------------------
+ testfile    | Bin 0 -> 35392 bytes
+ 5 files changed, 27 insertions(+), 19 deletions(-)
+
+commit 6d3270d1cc8a93d103d4d71626bf4960bf50e171
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Fri May 3 16:56:40 2019 +0200
+
+    pthread join et mise a jour
+    
+    ajout de pthread join permettant de faire tourner le programme, pas encore de resultat concluant
+
+ File   | Bin 30288 -> 35344 bytes
+ test.c |  22 ++++++++++++----------
+ 2 files changed, 12 insertions(+), 10 deletions(-)
+
+commit 3501211d55bf526f7f573da94307b0ff4e22ca7b
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Fri May 3 14:58:46 2019 +0200
+
+    creation de mutex et tests
+    
+    mutex et semaphores ne marchaient plus, je les ai deplacees
+
+ File   | Bin 30256 -> 30288 bytes
+ lire.c |   2 +-
+ test.c |  63 ++++++++++++++++++++++++++++++---------------------------------
+ 3 files changed, 31 insertions(+), 34 deletions(-)
+
+commit 99944b5d092615ad5e348d73e516af860cc37206
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Fri May 3 14:00:59 2019 +0200
+
+    Ajout de thread et ajout du main
+
+ -testfile   | Bin 0 -> 30072 bytes
+ -testfile.o | Bin 0 -> 30072 bytes
+ test.c      |  40 ++++++++++++++++++++++++++++++++--------
+ 3 files changed, 32 insertions(+), 8 deletions(-)
+
+commit d29850485ee98281bdb33f213e1d5461901d0ebd
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Fri May 3 12:27:35 2019 +0200
+
+    test reversehash et mise a jour
+    
+    test de reversehash dans lire.c et adaptation de test.c en conséquences
+
+ File   | Bin 0 -> 30256 bytes
+ lire.c |  67 ++++++++++++++-
+ test.c | 287 +++++++++++++++++++++++++++++++++--------------------------------
+ 3 files changed, 208 insertions(+), 146 deletions(-)
+
+commit 59af3fe4901134f9de26ff5a84daa1e7f3f49ae8
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Thu May 2 17:38:52 2019 +0200
+
+    Cracker cree dans test.c et test lire
+    
+    test.c presque complet, fichier lire.c permettant de tester lire
+
+ lire.c |  32 +++++++
+ test.c | 294 ++++++++++++++++++++++++++++++-----------------------------------
+ 2 files changed, 166 insertions(+), 160 deletions(-)
+
+commit 9cf8842c6f56579bbd7837c75302a9c0da0cc146
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Thu May 2 11:01:52 2019 +0200
+
+    Condition while, reglage de warnings
+    
+    Condition des while ajoutees et corrections de petits problemes
+
+ test.c | 84 ++++++++++++++++++++++++++++++++++--------------------------------
+ 1 file changed, 43 insertions(+), 41 deletions(-)
+
+commit 97fd6111577d6c476685d9b7e7a3733ea93c839e
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Wed May 1 23:19:53 2019 +0200
+
+    reglage de qq warning
+
+ test.c | 22 ++++++++++++----------
+ 1 file changed, 12 insertions(+), 10 deletions(-)
+
+commit 6d5b1329e5ea94fd0ab9f2995dab95b4143f2e8d
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Wed May 1 19:30:44 2019 +0200
+
+    fonction count, reversehash modifie
+
+ test.c | 139 +++++++++++++++++++++++++++++++++++++++--------------------------
+ 1 file changed, 83 insertions(+), 56 deletions(-)
+
+commit fb053bf49cfb2d42232808f8dd4451ed707c0863
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Wed May 1 12:44:01 2019 +0200
+
+    Fonction ecrire ajoutee
+    
+    Ajout de la fonction ecrire
+
+ test.c | 91 +++++++++++++++++++++++++++++++++++++++++++++++++++++-------------
+ 1 file changed, 74 insertions(+), 17 deletions(-)
+
+commit 2e0316a49d6a4eb9f56ab58f59db4df32331f735
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Tue Apr 30 18:41:03 2019 +0200
+
+    Fin du read et modif semaphore
+
+ File.c                  |   31 +-
+ reverse.c               |   50 +++
+ reverse.h               |   18 +
+ sha256.c                |  563 ++++++++++++++++++++++++++
+ sha256.h                |   91 +++++
+ test-input/01_4c_1k.bin |  Bin 0 -> 32000 bytes
+ test-input/01_4c_1k.txt | 1000 +++++++++++++++++++++++++++++++++++++++++++++++
+ test-input/02_6c_5.bin  |    5 +
+ test-input/02_6c_5.txt  |    5 +
+ test.c                  |  181 +++++----
+ 10 files changed, 1849 insertions(+), 95 deletions(-)
+
+commit def0d724227e4d3ccb51028ffc22967de9b68161
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Tue Apr 30 15:22:07 2019 +0200
+
+    possibilite de gerer les buffer
+    
+    Ajoute de int permettant de savoir dans quelle case du buffer prendre et mettre des elements
+
+ test.c | 36 ++++++++++++++++++++++++++++++------
+ 1 file changed, 30 insertions(+), 6 deletions(-)
+
+commit ea520f70b3a4e01a3de4b382332b07fed6632bd8
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Tue Apr 30 12:42:41 2019 +0200
+
+    Correction des semaphores
+    
+    adresse et malloc
+
+ test.c | 117 +++++++++++++++++++++++++++++++++++++----------------------------
+ 1 file changed, 66 insertions(+), 51 deletions(-)
+
+commit d1ec825f475a0797f2c901156992f6b1d5f3aa3b
+Author: Justine <justine.pironnet@student.uclouvain.be>
+Date:   Mon Apr 29 22:26:03 2019 +0200
+
+    traitement des erreurs
+
+ File.c | 24 ++++++++++++++----------
+ 1 file changed, 14 insertions(+), 10 deletions(-)
+
+commit d5ff3d61514a7fad32f434311a823d390263e25e
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Sat Apr 27 11:50:14 2019 +0200
+
+    Mise a jour
+    
+    File.c partiellement mis a jour et inclusion du deuxieme thread dans test.c
+
+ File.c | 40 +++++++++++++++++++++++++---------------
+ test.c | 35 ++++++++++++++++++++++++++++++++---
+ 2 files changed, 57 insertions(+), 18 deletions(-)
+
+commit 882ea1d9cce05990baa40df8af0220dc38bd2b8d
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Fri Apr 26 15:43:56 2019 +0200
+
+    fonction lire actualisee (1)
+    
+    grosse mise a jour de lire, marche presque
+
+ test.c | 42 ++++++++++++++++++++++++++----------------
+ 1 file changed, 26 insertions(+), 16 deletions(-)
+
+commit 8700fcf06d7315e3f1fc82d95067493447d4583d
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Fri Apr 26 10:52:50 2019 +0200
+
+    Fin de brouillon mise a jour (1)
+    
+    creation du thread ecrire
+
+ File.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+commit 5d0e091e87bac375e44a38d6bd29d8f30e499b98
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Tue Apr 23 19:10:34 2019 +0200
+
+    Fin du brouillon
+    
+    Fin du brouillon
+
+ File.c | 35 ++++++++++++++++++++++++++++++++++-
+ 1 file changed, 34 insertions(+), 1 deletion(-)
+
+commit 4c3ba26b3b1e3862ffbc216ca686f56d2b760f03
+Author: yoyomanhihi <thibaud.misonne@hotmail.com>
+Date:   Tue Apr 23 13:54:33 2019 +0200
+
+    Debut du brouillon
+
+ File.c | 55 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ test.c | 30 ++++++++++++++++++++++++++++++
+ 2 files changed, 85 insertions(+)
+
+commit 5c6a648ee6414e28b23d72ebeca450dc493d8a82
+Author: yoyomanhihi <48712682+yoyomanhihi@users.noreply.github.com>
+Date:   Tue Apr 23 13:40:49 2019 +0200
+
+    Initial commit
+
+ README.md | 1 +
+ 1 file changed, 1 insertion(+)
