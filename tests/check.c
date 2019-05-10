@@ -21,14 +21,16 @@ bool check(u_int8_t **buff, int size){
 }
 
 int main(int argc, char *argv[]){
-	bool vide=false;
-	uint8_t byte[32];
-	byte[0]=(uint8_t) 4;
-	uint8_t *tabvide[6];
-	uint8_t *tabrempli[9];
-	tabrempli[0]=byte;
-	vide=check(tabvide, 6);
-	printf("tableau vide: %d \n", vide);
-	vide=check(tabrempli, 9);
-	printf("tableau rempli: %d \n", vide);
+	bool vide1=false;
+	uint8_t **tabrempli;
+	tabrempli=(u_int8_t **)malloc(9*sizeof(uint8_t *));
+	uint8_t **tabvide;
+	tabvide=(u_int8_t **)malloc(6*sizeof(uint8_t *));
+	uint8_t *rbuf1 = (uint8_t *)malloc(sizeof(uint8_t)*32);
+	*rbuf1=101;
+	tabrempli[1]=rbuf1;
+	vide1=check(tabvide, 6);
+	printf("tableau vide: %d \n", vide1);
+	vide1=check(tabrempli, 9);
+	printf("tableau rempli: %d \n", vide1);
 }
