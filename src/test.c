@@ -54,7 +54,7 @@ int tvalue = 1;//variable stockant le nombre de threads de calcul
 char *ovalue = NULL;//variable qui stocke le nom du fichier output
 
 //fonction qui regarde si le buffer est vide
-bool check(u_int8_t **buff, int size){
+bool check(uint8_t **buff, int size){
 	bool vide=true;//de base il considere que le buffer est vide
 	for(int i=0; i<size;i++){
 		if(buff[i]!=0)//si le buffer n est pas vide 
@@ -87,10 +87,10 @@ void *lire(void *tab_fd){
 	int *fd1=(int *)tab_fd;//cast en int du tableau de fd donne en argument 
 	buffer1=(uint8_t **) malloc(3*sizeof(uint8_t *));
 	debut1=0;
-	u_int8_t *rbuf1 = (u_int8_t *)malloc(sizeof(u_int8_t)*32); //cree le buffer pour read
+	uint8_t *rbuf1 = (uint8_t *)malloc(sizeof(uint8_t)*32); //cree le buffer pour read
 	for(int i=0; i<nb_fichiers; i++){//parcourt la tableau contenant tous les fd
-		while(read(fd1[i], rbuf1, sizeof(u_int8_t)*32)>0){//Tant qu'il y a a lire
-			u_int8_t *rbuf = (u_int8_t *)malloc(sizeof(u_int8_t)*32); // cree le buffer pour read
+		while(read(fd1[i], rbuf1, sizeof(uint8_t)*32)>0){//Tant qu'il y a a lire
+			uint8_t *rbuf = (uint8_t *)malloc(sizeof(uint8_t)*32); // cree le buffer pour read
 			for(int i=0; i<32; i++)//copie de rbuf1 dans rbuf 
 				rbuf[i]=rbuf1[i];
 			
@@ -121,7 +121,7 @@ void *lire(void *tab_fd){
 //consommateur 1 et producteur 2 qui decrypte les mdp
 void *decrypteur(){
 	char *bufferInter=(char *) malloc(sizeof(char)*17);//buffer intermediaire utile a la fonction reversehash
-	u_int8_t *mdp;
+	uint8_t *mdp;
 	while(1){//tant qu on a pas decrypte tous les elements du fichier
 		sem_wait(&full1);//attente d un slot rempli
 		pthread_mutex_lock(&mut1); //lock le mut1
@@ -157,7 +157,7 @@ void *decrypteur(){
 			break;//le thread n est donc plus utile car le buffer est vide et donc sort de la boucle et s arrete
 		}
 		pthread_mutex_unlock(&mut2);
-		sem_post(&full2); //1 slot rempli en plus (5 max)
+		sem_post(&full2); //1 slot rempli en plus (500 max)
 		if(lu<=0 && debut1==fin1){//si lire est fini et que le buffer est vide
 			lu--;
 			printf("Je suis passé, stop = %d\n",lu);
@@ -253,18 +253,24 @@ void *ecrire(){
 		if(fd2==-1)//si erreur
 			perror("error open File write");
 		
+		char *enter = "\n";
 		while(n!=NULL){//parcourt la liste 
 			char *wbuff1=n->candid;//le buffer prend le mot de passe candidat
 			int b=write(fd2, wbuff1, sizeof(char)*(strlen(n->candid)));//le candidat est ecrit dans le fichier
 			if(b==-1)//si erreur
 				perror("write error");
 
+			b=write(fd2, enter,sizeof(char)*2);
+			if(b==-1)
+				perror("write enter");
 			count++;
 			n=n->next;//noeud suivant
 		}
 		if(close(fd2)==-1)
 			perror("error close file write");	
 	}
+	free(buffer1);
+	free(list);
 	printf("Le nombre de candidats est de %d\n", count);
 	pthread_exit(NULL);	
 }
